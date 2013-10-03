@@ -26,8 +26,12 @@ public:
     
 public slots:
     void stageRadioClickEvent();
+    void processStart_Suspend();
     void aboutDuplichasePopup();
+    void startScanner();
+    void StopScanner();
 private slots:
+    void processFinishedScanning(bool succeeded);
     void writeToStatusBar7(QString msg);
     void writeToLogger(QString msg);
 
@@ -43,7 +47,11 @@ private:
 
     QStackedLayout* dupScanFrameStackedLayout;
 
+    bool canStartScanning = false;
+    //bool justFinishedScan = false;
     void setupMainWindowElements();
+    void makeScanningContinue();
+    void makeScanningStartable();
 };
 
 #endif // DLSMAINWINDOW_H

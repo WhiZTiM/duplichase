@@ -6,7 +6,7 @@
    <rect>
     <x>0</x>
     <y>0</y>
-    <width>846</width>
+    <width>840</width>
     <height>520</height>
    </rect>
   </property>
@@ -164,6 +164,12 @@
              <height>16777215</height>
             </size>
            </property>
+           <property name="openExternalLinks">
+            <bool>true</bool>
+           </property>
+           <property name="openLinks">
+            <bool>false</bool>
+           </property>
           </widget>
          </widget>
         </item>
@@ -252,7 +258,7 @@
          <widget class="QProgressBar" name="progressBarFinite">
           <property name="minimumSize">
            <size>
-            <width>270</width>
+            <width>200</width>
             <height>0</height>
            </size>
           </property>
@@ -284,7 +290,7 @@
          <widget class="QProgressBar" name="progressBarWorking">
           <property name="minimumSize">
            <size>
-            <width>270</width>
+            <width>200</width>
             <height>0</height>
            </size>
           </property>
@@ -309,6 +315,9 @@
         <property name="orientation">
          <enum>Qt::Horizontal</enum>
         </property>
+        <property name="sizeType">
+         <enum>QSizePolicy::Expanding</enum>
+        </property>
         <property name="sizeHint" stdset="0">
          <size>
           <width>40</width>
@@ -330,13 +339,13 @@
           <widget class="QPushButton" name="progressSuspendPushButton">
            <property name="minimumSize">
             <size>
-             <width>65</width>
+             <width>80</width>
              <height>38</height>
             </size>
            </property>
            <property name="maximumSize">
             <size>
-             <width>65</width>
+             <width>100</width>
              <height>38</height>
             </size>
            </property>
@@ -369,9 +378,12 @@
            <property name="orientation">
             <enum>Qt::Horizontal</enum>
            </property>
+           <property name="sizeType">
+            <enum>QSizePolicy::Fixed</enum>
+           </property>
            <property name="sizeHint" stdset="0">
             <size>
-             <width>40</width>
+             <width>10</width>
              <height>20</height>
             </size>
            </property>
@@ -481,7 +493,7 @@
     <rect>
      <x>0</x>
      <y>0</y>
-     <width>846</width>
+     <width>840</width>
      <height>21</height>
     </rect>
    </property>

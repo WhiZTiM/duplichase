@@ -3,6 +3,7 @@
 #include <functional>
 #include <cmath>
 #include <QUrl>
+#include <QFile>
 #include <QLabel>
 #include <QTimer>
 #include <QDebug>
@@ -12,6 +13,7 @@
 #include <QListWidget>
 #include <QVBoxLayout>
 #include <QStaticText>
+#include <QMutexLocker>
 #include <QStackedLayout>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
@@ -19,14 +21,20 @@
 
 // Resolving Political Dependancy
 Q_DECLARE_METATYPE(DLS::FileProperty)
-//typedef QVector<int> QVECTOR_int;
-//Q_DECLARE_METATYPE(QVECTOR_int)
-//qRegisterMetaType<QVector<int>> ("QVector<int>");  // I think QStringList uses this
+Q_DECLARE_METATYPE(QVector<int>)
+Q_DECLARE_METATYPE(LOGType)
 //END
+
+QString returnTimeInString(ulong msec);
 
 DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     QWidget(parent), viewLimit(20)
 {
+    qRegisterMetaType<LOGType> ("LOGType");
+    qRegisterMetaType<QVector<int>> ("QVector<int>");
+
+    mainThread = QThread::currentThread();  //use it for pausing
+
     mainStackedLayout = new QStackedLayout(this);
     fileViewDelegate = new FileViewDelegate(this);
     fileListingWidget = new QListWidget(this);
@@ -56,6 +64,7 @@ DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     prop3.setFilePath("/home/whiztim/Documents/developer/C++/Qt/eret/343533/eretdgerererer/ erere ergegergerr/33433ertrt/rgrfgfgd/fdg/er/ertrertegfdgd/dfgrthtrteer");
     QListWidgetItem* item3 = new QListWidgetItem;
     item3->setData(Qt::DisplayRole, QVariant::fromValue<DLS::FileProperty>(prop3));
+    //item3->setFlags(Qt::NoItemFlags);
     fileListingWidget->addItem(item3);
     //item3->setSizeHint(QSize(item->sizeHint().width(), item->sizeHint().height() + 30) );
 
@@ -69,8 +78,9 @@ DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     //End Politics
     connect(this, SIGNAL(scanProgress(int)), this, SLOT(testUpdateSlot(int)));
     connect(this, SIGNAL(filePropertyAddSignal(DLS::FileProperty,int)), this, SLOT(addDLSFileProperty(DLS::FileProperty,int)));
+    connect(this, SIGNAL(logMessage(LOGType,QString,QString)), this, SLOT(processLogMessage(LOGType,QString,QString)));
 
-    QTimer::singleShot(4000, this, SLOT(test()));
+    //QTimer::singleShot(8000, this, SLOT(test()));
     setUpAuxilliaries();
 }
 
@@ -78,9 +88,11 @@ void DupScanFindWidget::startScanner(const QStringList &scanFolders, const QStri
 {
     if(scannerFuture.isRunning() || scannerFuture.isPaused())
     {
-        logMessage("<b>ERROR: Attempting to start a scan process while another is is currently in progress</b>");
+        logMessage(LOGType::Error, "ERROR",
+                   "Attempting to start a scan process while another is is currently in progress");
         return;
     }
+    continueScanning();
     cancelSCanning = cancelTransversal = false;
     scannerFuture = QtConcurrent::run(this, &DupScanFindWidget::startInternalScanner, scanFolders, exclusionFolders);
     processRunningtime.start();
@@ -116,13 +128,13 @@ void DupScanFindWidget::toggleSuperSpeed(bool value)
     else
         mainStackedLayout->setCurrentIndex(0);  //listing Widget
 
-    logMessage(QString("Super Speed Mode has been turned <b>") +
-               (superSpeedSet ? "ON" : "OFF") + "</b>");
+    logMessage(LOGType::Info, "Information" ,
+               (QString("Super Speed Mode has been turned <b>") + (superSpeedSet ? "ON" : "OFF") + "</b>"));
 }
 
 bool DupScanFindWidget::scanningJobRunning() const
 {
-    return scannerFuture.isRunning();
+    return scannerFuture.isRunning() && !scannerMutexLocked;
 }
 
 bool DupScanFindWidget::scanningJobFinished() const
@@ -132,25 +144,58 @@ bool DupScanFindWidget::scanningJobFinished() const
 
 bool DupScanFindWidget::scanningJobPaused() const
 {
-    return scannerFuture.isPaused();
+    return scannerMutexLocked;
 }
 
-void DupScanFindWidget::stopScanning()
+bool DupScanFindWidget::stopScanning()
 {
+    bool rtn = false;
     if(scannerFuture.isRunning())
+    {
+        cancelSCanning = cancelTransversal = true;
+        rtn = true;
         scannerFuture.cancel();
+        continueScanning();
+    }
+    return rtn;
 }
 
 void DupScanFindWidget::pauseScanning()
 {
-    if(scannerFuture.isRunning())
-        scannerFuture.pause();
+    if(mainThread != QThread::currentThread())
+        return;
+    //if(scannerFuture.isRunning())
+    //    scannerFuture.pause();
+    if(!scannerMutexLocked)
+    {
+        if(scannerMutex.tryLock(4000))
+            scannerMutexLocked = true;
+    }
+    if(!counterMutexLocked)
+    {
+        if(counterMutex.tryLock(4000))
+            counterMutexLocked = true;
+    }
+    update();
+    std::cout << "Paused" << std::endl;
 }
 
 void DupScanFindWidget::continueScanning()
 {
-    if(scannerFuture.isPaused())
-        scannerFuture.resume();
+    if(mainThread != QThread::currentThread())
+        return;
+    if(scannerMutexLocked)
+    {
+        scannerMutex.unlock();
+        scannerMutexLocked = false;
+    }
+    if(counterMutexLocked)
+    {
+        counterMutex.unlock();
+        counterMutexLocked = false;
+    }
+    update();
+    std::cout << "Continued" << std::endl;
 }
 
 bool DupScanFindWidget::resultsReady() const
@@ -182,20 +227,25 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
     try
     {
         //
+        logMessage(LOGType::Error, "NEW Scan Operation: - Initializing DupLichaSe Scanning Systems", "");
+
         DLS::Tree::DirectoryElementHelper helper(true);
         for(QString exclusion : exclusionFolders)
         {
-            logMessage("Adding Exclusion Path: <b>" + QUrl::fromLocalFile(exclusion).toString() + "</b>");
+            QString flink = QUrl::fromLocalFile(exclusion).toString();
+            QString body = "<a href=\"" + flink + "\">" + exclusion + "</a>";
+            logMessage(LOGType::DLSCoreInfo, "Adding Exclusion Path:", body);
             helper.addPath(exclusion.toStdString());
         }
 
         DLS::ExclusionHandler exclusion( helper.getDirectoryElement() );
         DLS::DuplicateFinderConstruct construct(exclusion);
-        logMessage("Exclusion Folders' tree Dealt with<br />");
 
         for(QString inclusion : scanFolders)
         {
-            logMessage("Adding Search Path: <b>" + QUrl::fromLocalFile(inclusion).toString() + "</b>");
+            QString flink = QUrl::fromLocalFile(inclusion).toString();
+            QString body = "<a href=\"" + flink + "\">" + inclusion + "</a>";
+            logMessage(LOGType::DLSCoreInfo, "Adding Search Path:", body);
             construct.addPath(inclusion.toStdString());
         }
 
@@ -204,18 +254,19 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
         //Lambda function for checking if COunts Prepared
         auto transversalWatch = [&] () -> bool
             {
-                logMessage("DupLichaSe-Core: - initializing Ahead-Of-Time File Counting");
+                logMessage(LOGType::DLSCoreInfo, "DupLichaSe-Core", "initializing Ahead-Of-Time File Counting");
                 try
                 {
-                logMessage("DupLichaSe-Core: - SubSystem Ahead-Of-Time Scanner started");
+                logMessage(LOGType::DLSCoreInfo, "DupLichaSe-Core", "SubSystem Ahead-Of-Time Scanner started");
                     while(!dfCon.CountsPrepared())
                     {
                         if(cancelTransversal)
                         {
-                            logMessage("<br /><b>FILE COUNTING ABORTED BY USER</b><br />");
+                            logMessage(LOGType::DLSCoreWarning, "Signal Fired", "FILE COUNTING ABORTED BY USER!");
                             return false;
                         }
-                        std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                        QThread::msleep(500);
+                        //std::this_thread::sleep_for(std::chrono::milliseconds(500));
                     }
                     transversedFileCounts = dfCon.totalCount();
                     emit finishedPathTransversal(true, transversedFileCounts);
@@ -223,7 +274,8 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
                 }
                 catch(...)
                 {
-                    logMessage("<b><i><u> FATAL ERROR! An uncaught EXCEPTION was thrown from the Counting Subsystem</u></i></b><br />");
+                    logMessage(LOGType::DLSCoreError, "FATAL ERROR",
+                               "An uncaught EXCEPTION was thrown from the Counting Subsystem");
                 }
                 transversedFileCounts = dfCon.totalCount();
                 emit finishedPathTransversal(false, transversedFileCounts);
@@ -238,17 +290,17 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
         {
             if(cancelSCanning)
             {
-                logMessage("<br /><b>Duplicate Finder Subsystem was shutdown by user</b>");
+                logMessage(LOGType::DLSCoreWarning, "DupLichaSe-Core",
+                           "Duplicate Finder Subsystem was shutdown by user");
                 break;
             }
-            //addDLSFileProperty( dfCon.nextFile(), dfCon.ruleDepth() );
-            filePropertyAddSignal(dfCon.nextFile(), dfCon.ruleDepth() );
+            addDLSFileProperty( dfCon.nextFile(), dfCon.ruleDepth() );
             QString error( QString::fromStdString( dfCon.getCurrentError() ) );
             if(scannerSleepInterval)
                 QThread::msleep(scannerSleepInterval);
             if(!error.isEmpty())
             {
-                logMessage("<b>ERROR: -->>> " + error + " </b><br />");
+                logMessage(LOGType::DLSCoreWarning, "DupLichaSe-Core: Scanner Subsystem message", error);
                 continue;
             }
             if(++temp_counter > 10)     //Fire after every 10 rounds
@@ -256,6 +308,7 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
                 updateScanProgressSignal(dfCon.getCount());
                 temp_counter = 0;
             }
+            QMutexLocker locker(&scannerMutex);
         }
         //updateScanProgressSignal(dfCon.totalCount());
         duplicates = dfCon.getDuplicatesContainer();
@@ -267,7 +320,7 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
     }
     catch(...)
     {
-        logMessage("<b><i><u> FATAL ERROR!! An uncaught EXCEPTION was thrown from the Scanning Subsystem!</u></i></b><br />");
+        logMessage(LOGType::DLSCoreError, "DupLiChaSe-Core::FATAL ERROR", "An uncaught EXCEPTION was thrown from the Scanning Subsystem!");
     }
     emit finishedScanning(false);
     return false;
@@ -319,6 +372,7 @@ void DupScanFindWidget::setUpAuxilliaries()
     superSpeedLabel->setText(label);
     superSpeedLabel->setAlignment(Qt::AlignCenter);
     connect(this, SIGNAL(finishedPathTransversal(bool,ulong)), this, SLOT(processFinshedPathTransversal(bool,ulong)));
+    connect(this, SIGNAL(finishedScanning(bool)), this, SLOT(processFinshedScanning(bool)));
 }
 
 
@@ -359,24 +413,39 @@ void DupScanFindWidget::addDLSFileProperty(const DLS::FileProperty &fileproperty
 
 void DupScanFindWidget::processFinshedPathTransversal(bool completed, unsigned long counts)
 {
-    QString msg;
+    QString header("DupLichase-Core"), msg;
     if(completed)
-        msg =   "DupLichaSe-Core: - Successfully completed Ahead of Time File Transversal!! <br />"
-                "Total Files That would be scanned: <b>" + QString::number(counts) +
-                "<br />Progress Bar is Now Assured Accurate!</b>";
+    {
+        msg = "Successfully completed Ahead of Time File Transversal in <b>"
+                + returnTimeInString(processRunningtime.elapsed()) + "</b>";
+        logMessage(LOGType::DLSCoreInfo, header, msg);
+        logMessage(LOGType::Info, "Information",
+                   "Total Files That would be scanned: <b>" + QString::number(counts) + "</b>" );
+        logMessage(LOGType::Info, "Information", "Progress Bar is Now Assured Accurate!");
+    }
     else
-        msg =   "DupLichase-Core: - OOPS! Something went wrong during Ahead of Time File Transversal!! <br />"
-                "<b>Progress Bar may NOT report correct values</b><br />"
-                "So also does DupLichaSe Core have an increased tendency to fail "
-                "ANYTIME during this scan!!<br />If it fails Please Re-run Duplichase again! <br />"
+    {
+        msg =   "OOPS! Something went wrong during Ahead of Time File Transversal!!";
+        logMessage(LOGType::DLSCoreError, header, msg);
+        logMessage(LOGType::Warning, "Warning",
+                "Progress Bar may NOT report correct values"
+                "<br />So also does DupLichaSe Core have an increased tendency to fail "
+                "ANYTIME during this scan!!<br />");
+        logMessage(LOGType::Info, "Blind Information",
+                "If it fails Please Re-run Duplichase again! <br />"
                 "On Subsequent failures, restart your Computer and Re-run DupLichaSe<br />"
-                "As a Last resort, please File a Complaint! Menu -> Help -> Report a Problem";
-    logMessage(msg);
+                "As a Last resort, please File a Complaint! Menu -> Help -> Report a Problem");
+    }
 }
 
 void DupScanFindWidget::processLogMessage(LOGType logtype, QString header, QString body)
 {
-    static const QString s =                ": ";
+    /*Hebrews 2:3 How shall we escape, if we neglect so great salvation;
+     *which at the first began to be spoken by the Lord,
+     *and was confirmed unto us by them that heard him;
+     */
+
+    const QString s = body.isEmpty() ? "" : ": ";
     static const QString K_Bold =           "<b>";
     static const QString K_Italics =        "<i>";
     static const QString K_EndColor =       "</font>";
@@ -385,11 +454,11 @@ void DupScanFindWidget::processLogMessage(LOGType logtype, QString header, QStri
     static const QString K_BlackColor =     "<font color='#000000'>";
     static const QString K_RedColor =       "<font color='#FF0000'>";
     static const QString K_DRedColor =      "<font color='#770000'>";
-    static const QString K_GreenColor =     "<font color='#00FF00'>";
-    static const QString K_DGreenColor =    "<font color='#237E00'>";
+    static const QString K_DGreenColor =    "<font color='#006000'>";
     static const QString K_BlueColor =      "<font color='#0000FF'>";
     static const QString K_DBlueColor =     "<font color='#404184'>";
     static const QString K_DBrownColor =    "<font color='#400320'>";
+    static const QString K_MaroonColor =   "<font color='#AD0C54'>";
 
     QString rtn;
 
@@ -398,10 +467,10 @@ void DupScanFindWidget::processLogMessage(LOGType logtype, QString header, QStri
             rtn = header + body;
             break;
         case LOGType::DLSCoreInfo:
-            rtn = K_GreenColor +
+            rtn = K_DBrownColor +
                     header + s +
                   K_EndColor +
-                    body;
+                    K_MaroonColor + body + K_EndColor;
             break;
         case LOGType::DLSCoreWarning:
             rtn = K_Bold + K_DGreenColor +
@@ -441,9 +510,24 @@ void DupScanFindWidget::processLogMessage(LOGType logtype, QString header, QStri
     emit logMessage(rtn);
 }
 
+void DupScanFindWidget::processFinshedScanning(bool succeeded)
+{
+    if(succeeded)
+        logMessage(LOGType::Info, "Scanning Completed",
+                   "Successfully found all Duplicate Files accessible to DupLichaSe");
+    else
+        logMessage(LOGType::Warning, "Scanning Completed",
+                   "Scanner May have encountered Errors... Please pay attention to the results");
+    logMessage(LOGType::Info, "Information",
+               ("<b>Scan lasted for " + returnTimeInString(processRunningtime.elapsed()) + "</b>"));
+}
 
 DupScanFindWidget::~DupScanFindWidget()
 {
+    if(scannerMutexLocked)
+        scannerMutex.unlock();
+    if(counterMutexLocked)
+        counterMutex.unlock();
     cancelTransversal = true;
     cancelSCanning = true;
     transversalFuture.cancel();
@@ -525,8 +609,8 @@ void FileViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
 
 QString FileViewDelegate::fileSizeAsString(const ulong size) const
 {
-    const int dp = 2;
-    const char f = 'f';
+    static const int dp = 2;
+    static const char f = 'f';
     QString rtn;
     if(size < 1024)                     //Bytes -> KB
         rtn = QString("%1 Bytes").arg(size);
@@ -547,4 +631,34 @@ QString FileViewDelegate::fileNameAsString(const std::string &name) const
 QString FileViewDelegate::fileNameAsString(const QString &name) const
 {
     return QString::fromStdString(boost::filesystem::path(name.toStdString()).native());
+}
+
+
+/////////////////////////////////////////////////////////////////////////
+/////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+////////////////////////////////////////////////////////////////////////////
+///
+///
+/// Free Function Implementation
+
+QString returnTimeInString(ulong msec)
+{
+    static const int g = 2;
+    static const char f = 'f';
+    if(msec < 100)
+    {
+        return (QString::number(msec) + " milliseconds");
+    }
+    else if(msec < 1000)
+    {
+        return (QString::number( 1000.0 / msec, f, g ) + " seconds");
+    }
+    else if(msec < 60000)
+    {
+        return (QString::number( msec / 1000.0, f, g ) + " seconds");
+    }
+    int minutes = msec % 600000;
+    int seconds = msec - (minutes * 60000);
+    return (QString::number(minutes) + " minutes, " + QString::number(seconds) + " seconds");
 }

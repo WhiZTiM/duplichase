@@ -4,12 +4,14 @@
 #include <chrono>
 #include <QTime>
 #include <QWidget>
+#include <QMutex>
 #include <QFuture>
 #include <QStyledItemDelegate>
 #include "backend/include/container_helpers/fp_holders.hpp"
 
 QT_BEGIN_NAMESPACE
 class QLabel;
+class QThread;
 class QPainter;
 class QListWidget;
 class QModelIndex;
@@ -58,7 +60,6 @@ class DupScanFindWidget : public QWidget
 public:
     explicit DupScanFindWidget(QWidget *parent = 0);
     ~DupScanFindWidget();
-    void startScanner(const QStringList& scanFolders, const QStringList& exclusionFolders);
     DLS::DuplicatesContainer getDuplicateContainer();
     //void testSuite();
     
@@ -71,11 +72,12 @@ signals:
     void logMessage(LOGType logType, QString header, QString body);
 
 public slots:
+    void startScanner(const QStringList& scanFolders, const QStringList& exclusionFolders);
     bool scanningJobPaused() const;
     bool scanningJobRunning() const;
     bool scanningJobFinished() const;
     bool resultsReady() const;
-    void stopScanning();
+    bool stopScanning();
     void pauseScanning();
     void continueScanning();
     void setViewLimit(unsigned long limit);
@@ -86,6 +88,7 @@ public slots:
 
 private slots:
     void processFinshedPathTransversal(bool, unsigned long);
+    void processFinshedScanning(bool succeeded);
     void processLogMessage(LOGType logtype, QString header, QString body);
     void addDLSFileProperty(const DLS::FileProperty& fileproperty, int id = 0);
     //void outOfThreadLogMessage(QString);
@@ -95,17 +98,23 @@ private:
     QStackedLayout *mainStackedLayout;
     QListWidget *fileListingWidget;
     QLabel *superSpeedLabel;
+    QThread *mainThread;
     QFuture<bool> scannerFuture;
     QFuture<bool> transversalFuture;
     QTime progressTimer;
     QTime processRunningtime;
     QTime processRunningTimeStart;
+    QMutex scannerMutex;
+    QMutex counterMutex;
 
     unsigned long viewLimit;
     unsigned long transversedFileCounts = 0;
-    bool cancelTransversal = false;
-    bool cancelSCanning = false;
+    volatile bool scannerMutexLocked = false;
+    volatile bool counterMutexLocked = false;
+    volatile bool cancelTransversal = false;
+    volatile bool cancelSCanning = false;
     volatile bool superSpeedSet = false;
+    volatile bool suspendAllScanners = false;
     volatile int scannerSleepInterval = 0;
 
     bool startInternalScanner(const QStringList scanFolders, const QStringList exclusionFolders);

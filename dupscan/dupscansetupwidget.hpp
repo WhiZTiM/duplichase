@@ -23,6 +23,8 @@ class DupScanSetupWidget : public QWidget
 public:
     explicit DupScanSetupWidget(QWidget *parent = 0);
     void setInbuiltExclusionList(const QStringList& exclusionList);
+    bool searchListIsEmpty() const;
+    QStringList searchList() const;
     QStringList inbuiltExclusionList() const;
     QStringList currentExclusionList() const;
     

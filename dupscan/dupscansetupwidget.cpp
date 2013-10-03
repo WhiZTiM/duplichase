@@ -77,13 +77,28 @@ DupScanSetupWidget::DupScanSetupWidget(QWidget *parent) :
     connect(e_removeFolderPushButton, SIGNAL(clicked()), this, SLOT(remove_exclusionFolder()));
     connect(e_showInbuiltListPushButton, SIGNAL(clicked()), this, SLOT(showHide_inbuiltExclusionList()));
 
+    e_showInbuiltListPushButton->setChecked(true);
+    showHide_inbuiltExclusionList();
 }
 
 
 //! PUBLIC FUNCTIONS
+bool DupScanSetupWidget::searchListIsEmpty() const
+{
+    return s_pathsListWidget->count() == 0;
+}
+
 void DupScanSetupWidget::setInbuiltExclusionList(const QStringList& exclusionList)
 {
     e_inbuiltExclusionList = exclusionList;
+}
+
+QStringList DupScanSetupWidget::searchList() const
+{
+    QStringList rtn;
+    for(int k = 0; k < s_pathsListWidget->count(); k++)
+        rtn.append( s_pathsListWidget->item(k)->text() );
+    return rtn;
 }
 
 QStringList DupScanSetupWidget::inbuiltExclusionList() const
