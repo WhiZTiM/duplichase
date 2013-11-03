@@ -1,6 +1,8 @@
 #include "backend/include/duplicatefinder.hpp"
+#include "useful_qt_functions.hpp"
 #include "dupscanfindwidget.hpp"
 #include <functional>
+#include <cstdlib>
 #include <cmath>
 #include <QUrl>
 #include <QFile>
@@ -24,8 +26,6 @@ Q_DECLARE_METATYPE(DLS::FileProperty)
 Q_DECLARE_METATYPE(QVector<int>)
 Q_DECLARE_METATYPE(LOGType)
 //END
-
-QString returnTimeInString(ulong msec);
 
 DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     QWidget(parent), viewLimit(20)
@@ -78,7 +78,9 @@ DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     //End Politics
     connect(this, SIGNAL(scanProgress(int)), this, SLOT(testUpdateSlot(int)));
     connect(this, SIGNAL(filePropertyAddSignal(DLS::FileProperty,int)), this, SLOT(addDLSFileProperty(DLS::FileProperty,int)));
-    connect(this, SIGNAL(logMessage(LOGType,QString,QString)), this, SLOT(processLogMessage(LOGType,QString,QString)));
+    //connect(this, SIGNAL(logMessage(LOGType,QString,QString)), this, SLOT(processLogMessage(LOGType,QString,QString)));
+    connect(this, SIGNAL(logMessage(LOGType,QString,QString)), &logFormatter, SLOT(formatAndWriteLogMessage(LOGType,QString,QString)));
+    connect(&logFormatter, SIGNAL(logMessage(QString)), this, SIGNAL(logMessage(QString)));
 
     //QTimer::singleShot(8000, this, SLOT(test()));
     setUpAuxilliaries();
@@ -294,7 +296,8 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
                            "Duplicate Finder Subsystem was shutdown by user");
                 break;
             }
-            addDLSFileProperty( dfCon.nextFile(), dfCon.ruleDepth() );
+            //addDLSFileProperty( dfCon.nextFile(), dfCon.ruleDepth() );
+            filePropertyAddSignal( dfCon.nextFile(), dfCon.ruleDepth() );
             QString error( QString::fromStdString( dfCon.getCurrentError() ) );
             if(scannerSleepInterval)
                 QThread::msleep(scannerSleepInterval);
@@ -393,16 +396,17 @@ void DupScanFindWidget::addDLSFileProperty(const DLS::FileProperty &fileproperty
     case 0:
         break;
     case 1:
-        item->setBackground(QColor(70, 200, 30));
+        item->setBackground(QColor(7, 245, 250));
         break;
     case 2:
-        item->setBackground(QColor(70, 100, 40));
+        item->setBackground(QColor(60, 200, 20));
         break;
     case 3:
-        item->setBackground(QColor(70, 100, 100));
+        item->setBackground(QColor(200, 120, 20));
         break;
     case 4:
-        item->setBackground(QColor(100, 0, 150));
+        item->setBackground(QColor(10, 210, 100));
+        break;
     default:
         break;
     }
@@ -436,78 +440,6 @@ void DupScanFindWidget::processFinshedPathTransversal(bool completed, unsigned l
                 "On Subsequent failures, restart your Computer and Re-run DupLichaSe<br />"
                 "As a Last resort, please File a Complaint! Menu -> Help -> Report a Problem");
     }
-}
-
-void DupScanFindWidget::processLogMessage(LOGType logtype, QString header, QString body)
-{
-    /*Hebrews 2:3 How shall we escape, if we neglect so great salvation;
-     *which at the first began to be spoken by the Lord,
-     *and was confirmed unto us by them that heard him;
-     */
-
-    const QString s = body.isEmpty() ? "" : ": ";
-    static const QString K_Bold =           "<b>";
-    static const QString K_Italics =        "<i>";
-    static const QString K_EndColor =       "</font>";
-    static const QString K_EndItalics =     "</i>";
-    static const QString K_EndBold =        "</b>";
-    static const QString K_BlackColor =     "<font color='#000000'>";
-    static const QString K_RedColor =       "<font color='#FF0000'>";
-    static const QString K_DRedColor =      "<font color='#770000'>";
-    static const QString K_DGreenColor =    "<font color='#006000'>";
-    static const QString K_BlueColor =      "<font color='#0000FF'>";
-    static const QString K_DBlueColor =     "<font color='#404184'>";
-    static const QString K_DBrownColor =    "<font color='#400320'>";
-    static const QString K_MaroonColor =   "<font color='#AD0C54'>";
-
-    QString rtn;
-
-    switch (logtype) {
-        case LOGType::None:
-            rtn = header + body;
-            break;
-        case LOGType::DLSCoreInfo:
-            rtn = K_DBrownColor +
-                    header + s +
-                  K_EndColor +
-                    K_MaroonColor + body + K_EndColor;
-            break;
-        case LOGType::DLSCoreWarning:
-            rtn = K_Bold + K_DGreenColor +
-                    header + s +
-                  K_EndColor + K_EndBold +
-                    body;
-            break;
-        case LOGType::DLSCoreError:
-            rtn = K_Bold + K_DRedColor +
-                    header + s +
-                  K_EndColor + K_EndBold +
-                    body;
-            break;
-        case LOGType::Info:
-            rtn = K_Bold + K_BlueColor +
-                    header + s +
-                  K_EndColor + K_EndBold +
-                    K_Italics + body + K_EndItalics;
-            break;
-        case LOGType::Warning:
-            rtn = K_Bold + K_DBlueColor +
-                    header + s +
-                  K_EndColor + K_EndBold +
-                    K_Italics + body + K_EndItalics;
-            break;
-        case LOGType::Error:
-            rtn = K_Bold + K_DRedColor +
-                    header + s +
-                  K_EndColor + K_EndBold +
-                    K_Italics + body + K_EndItalics;
-            break;
-        default:
-            rtn = header + body;
-            break;
-    }
-
-    emit logMessage(rtn);
 }
 
 void DupScanFindWidget::processFinshedScanning(bool succeeded)
@@ -640,25 +572,3 @@ QString FileViewDelegate::fileNameAsString(const QString &name) const
 ////////////////////////////////////////////////////////////////////////////
 ///
 ///
-/// Free Function Implementation
-
-QString returnTimeInString(ulong msec)
-{
-    static const int g = 2;
-    static const char f = 'f';
-    if(msec < 100)
-    {
-        return (QString::number(msec) + " milliseconds");
-    }
-    else if(msec < 1000)
-    {
-        return (QString::number( 1000.0 / msec, f, g ) + " seconds");
-    }
-    else if(msec < 60000)
-    {
-        return (QString::number( msec / 1000.0, f, g ) + " seconds");
-    }
-    int minutes = msec % 600000;
-    int seconds = msec - (minutes * 60000);
-    return (QString::number(minutes) + " minutes, " + QString::number(seconds) + " seconds");
-}

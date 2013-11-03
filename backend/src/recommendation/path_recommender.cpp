@@ -75,7 +75,8 @@ void SimpleDEEdgeAgent::addPath(const std::string& path)
     for(unsigned i=0; i < pathStructure.size(); i++)
     {
         elem = new DirectoryElement( pathStructure[i], element );
-        elem->property(new DEEdgeProperty());
+        if(elem->property())
+            elem->property(new DEEdgeProperty());
         element = element->addChild( elem );
     }
 

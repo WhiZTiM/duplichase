@@ -37,7 +37,12 @@ SOURCES += \
     dupscan/dupscanfindwidget.cpp \
     dupscan/dupscanactionwidget.cpp \
     dupscan/dupscanhelper.cpp \
-    dupscan/dialogs/aboutdialog.cpp
+    dupscan/dialogs/aboutdialog.cpp \
+    dupscan/modelview/dactionslistmodel.cpp \
+    dupscan/logformatter.cpp \
+    dupscan/useful_qt_functions.cpp \
+    dupscan/useful_functions.cpp \
+    dupscan/modelview/dactionslistview.cpp
 
 HEADERS  += \
 	backend/include/container_helpers/fp_holders.hpp \
@@ -69,7 +74,12 @@ HEADERS  += \
     dupscan/dupscanfindwidget.hpp \
     dupscan/dupscanactionwidget.hpp \
     dupscan/dupscanhelper.hpp \
-    dupscan/dialogs/aboutdialog.hpp
+    dupscan/dialogs/aboutdialog.hpp \
+    dupscan/modelview/dactionslistmodel.hpp \
+    dupscan/modelview/ditem.hpp \
+    dupscan/logformatter.hpp \
+    dupscan/modelview/dactionslistview.hpp \
+    test/fileproperty/sample_fileProperty.hpp
 
 #FORMS    += \
 #    UI/mainwindow.ui \

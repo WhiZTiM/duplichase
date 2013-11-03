@@ -6,6 +6,7 @@
 #include <QWidget>
 #include <QMutex>
 #include <QFuture>
+#include "logformatter.hpp"
 #include <QStyledItemDelegate>
 #include "backend/include/container_helpers/fp_holders.hpp"
 
@@ -24,17 +25,6 @@ namespace DLS {
     class FileProperty;
     //class DuplicatesContainer;
 }
-
-enum class LOGType
-{
-    DLSCoreWarning,
-    DLSCoreError,
-    DLSCoreInfo,
-    Info,
-    Error,
-    Warning,
-    None
-};
 
 class FileViewDelegate : public QStyledItemDelegate
 {
@@ -89,7 +79,7 @@ public slots:
 private slots:
     void processFinshedPathTransversal(bool, unsigned long);
     void processFinshedScanning(bool succeeded);
-    void processLogMessage(LOGType logtype, QString header, QString body);
+    //void processLogMessage(LOGType logtype, QString header, QString body);
     void addDLSFileProperty(const DLS::FileProperty& fileproperty, int id = 0);
     //void outOfThreadLogMessage(QString);
 
@@ -122,6 +112,7 @@ private:
     void setUpAuxilliaries();
 
     DLS::DuplicatesContainer duplicates;
+    LogFormatter logFormatter;
 };
 
 #endif // DUPSCANFINDWIDGET_HPP

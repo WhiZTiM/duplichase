@@ -2,6 +2,19 @@
 #define DUPSCANACTIONWIDGET_HPP
 
 #include <QWidget>
+#include <QListView>
+
+class DActionsListView;
+class DActionsListModel;
+class DActionsListDelegate;
+
+class DuplicatesListView : public QListView
+{
+    Q_OBJECT
+public:
+    explicit DuplicatesListView(QWidget* parent = nullptr);
+};
+
 
 class DupScanActionWidget : public QWidget
 {
@@ -13,6 +26,10 @@ signals:
 
 public slots:
 
+private:
+    DActionsListView* view;
+    DActionsListModel* model;
+    DActionsListDelegate* delegate;
 };
 
 #endif // DUPSCANACTIONWIDGET_HPP
