@@ -23,6 +23,12 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     setLayout( new QHBoxLayout );
     layout()->addWidget( view );
 
-    model->setDuplicateData( sampleDuplicateContainer() );
+    model->setDuplicates( sampleDuplicateContainer() );
 
+}
+
+void DupScanActionWidget::setDuplicates(DLS::DuplicatesContainer duplicates)
+{
+    model->setDuplicates( duplicates );
+    update();
 }

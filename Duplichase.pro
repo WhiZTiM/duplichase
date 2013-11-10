@@ -105,4 +105,4 @@ FORMS += \
     dupscan/dialogs/aboutdialog.ui
 
 RESOURCES += \
-    resources/icon_resource.qrc
+    resources/resources.qrc

@@ -1,8 +1,9 @@
 #ifndef DACTIONSLISTMODEL_HPP
 #define DACTIONSLISTMODEL_HPP
 
-#include <QAbstractListModel>
 #include <QList>
+#include <QAbstractListModel>
+#include <QSortFilterProxyModel>
 #include <dupscan/modelview/ditem.hpp>
 #include <backend/include/container_helpers/fp_holders.hpp>
 #include <backend/include/recommendation/path_recommender.hpp>
@@ -12,7 +13,16 @@ class DActionsListModel : public QAbstractListModel
     Q_OBJECT
 public:
     explicit DActionsListModel(QObject *parent = 0);
-    void setDuplicateData(DLS::DuplicatesContainer container);
+    void setDuplicates(DLS::DuplicatesContainer container);
+    void sortModel(Qt::SortOrder sortOrder = Qt::DescendingOrder);
+
+    /*! TODO!!!
+    void filterModelByPath(const QString& parentPath );
+    void filterModelBySize(ulong min, ulong max);
+    */
+
+    void filterModelByExtension(const QStringList& extensionList);
+    void resetViewItems();
 
     //overriden functions
     int rowCount(const QModelIndex &parent) const override;
@@ -26,6 +36,8 @@ public slots:
 private:
     DLS::DuplicatesContainer duplicates;
     DLS::PathRecommender recommender;
+    QList<DItem*> viewItems;
+    QList<int> viewIndexes;
     QList<DItem> items;
     //QHash parentsMap;
 

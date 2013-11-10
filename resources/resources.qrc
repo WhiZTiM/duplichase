@@ -1,0 +1,12 @@
+<RCC>
+    <qresource prefix="/main">
+        <file alias="mainIcon">icon640x640.png</file>
+    </qresource>
+    <qresource prefix="/images">
+        <file alias="bg01">stylesheet/images/bg01.png</file>
+        <file alias="bg02">stylesheet/images/bg02.png</file>
+    </qresource>
+    <qresource prefix="/stylesheet">
+        <file alias="mainStyle">stylesheet/main_style.css</file>
+    </qresource>
+</RCC>

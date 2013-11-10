@@ -1,0 +1,8 @@
+
+QMainWindow> .QWidget{
+    background-color: "black";
+    background-image: url("/resources/stylesheet/main_style.css");
+	background-repeat: repeat-xy;
+    /*font-size: 12px; */
+    }
+

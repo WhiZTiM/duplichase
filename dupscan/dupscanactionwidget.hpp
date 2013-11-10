@@ -3,6 +3,7 @@
 
 #include <QWidget>
 #include <QListView>
+#include "backend/include/container_helpers/fp_holders.hpp"
 
 class DActionsListView;
 class DActionsListModel;
@@ -25,6 +26,7 @@ public:
 signals:
 
 public slots:
+    void setDuplicates(DLS::DuplicatesContainer duplicates);
 
 private:
     DActionsListView* view;

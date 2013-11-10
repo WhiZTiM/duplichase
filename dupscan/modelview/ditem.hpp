@@ -29,6 +29,8 @@ struct DItem
     bool isGroupHeader = false;
     DLS::FileProperty property;
     GroupHeader header;
+    unsigned long deletionWeight;
+    unsigned long keepingWeight;
 };
 
 inline bool operator == (const DItem& lhs, const DItem& rhs)

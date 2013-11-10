@@ -1,5 +1,6 @@
-#include <QStackedLayout>
+#include <QFile>
 #include <QListWidget>
+#include <QStackedLayout>
 #include "dlsmainwindow.hpp"
 #include "ui_dlsmainwindow.h"
 #include "dupscan/dialogs/aboutdialog.hpp"
@@ -22,6 +23,17 @@ DLSMainWindow::DLSMainWindow(QWidget *parent) :
     dpActionWidget = new DupScanActionWidget(this);
     setupMainWindowElements();
     setWindowIcon(QIcon(":/main/mainIcon"));
+    QFile file(":/stylesheet/mainStyle");
+    if(file.isOpen())
+    {
+        qApp->setStyleSheet( QString::fromLatin1( file.readAll() ) );
+    }
+    qApp->setStyleSheet(
+                "QMainWindow> .QWidget{"
+                //"background-color: \"black\";"
+                "background-image: url(\":/images/bg01\");"
+                "background-repeat: repeat-xy;"
+                "}");
 }
 
 void DLSMainWindow::setupMainWindowElements()
@@ -183,5 +195,6 @@ void DLSMainWindow::processFinishedScanning(bool succeeded)
     canStartScanning = false;
     makeScanningStartable();
     ui->stage3_ActionsRadioButton->setChecked(true);
+    dpActionWidget->setDuplicates( dpFindWidget->getDuplicateContainer() );
     stageRadioClickEvent();
 }
