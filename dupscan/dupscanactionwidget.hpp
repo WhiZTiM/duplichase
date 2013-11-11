@@ -8,6 +8,7 @@
 class DActionsListView;
 class DActionsListModel;
 class DActionsListDelegate;
+class ActionsButtonPanel;
 
 class DuplicatesListView : public QListView
 {
@@ -22,6 +23,8 @@ class DupScanActionWidget : public QWidget
     Q_OBJECT
 public:
     explicit DupScanActionWidget(QWidget *parent = 0);
+    ~DupScanActionWidget();
+    QWidget *actionsButtonPanel() const;
 
 signals:
 
@@ -32,6 +35,7 @@ private:
     DActionsListView* view;
     DActionsListModel* model;
     DActionsListDelegate* delegate;
+    ActionsButtonPanel* actionsButton;
 };
 
 #endif // DUPSCANACTIONWIDGET_HPP

@@ -1,5 +1,6 @@
 #include <QFile>
 #include <QListWidget>
+#include <QHBoxLayout>
 #include <QStackedLayout>
 #include "dlsmainwindow.hpp"
 #include "ui_dlsmainwindow.h"
@@ -21,6 +22,7 @@ DLSMainWindow::DLSMainWindow(QWidget *parent) :
     dpSetupWidget = new DupScanSetupWidget(this);
     dpFindWidget = new DupScanFindWidget(this);
     dpActionWidget = new DupScanActionWidget(this);
+    ui->dupScanParameterFrame->setLayout( new QHBoxLayout );
     setupMainWindowElements();
     setWindowIcon(QIcon(":/main/mainIcon"));
     QFile file(":/stylesheet/mainStyle");
@@ -52,6 +54,8 @@ void DLSMainWindow::setupMainWindowElements()
     dupScanFrameStackedLayout->addWidget(dpFindWidget);
     dupScanFrameStackedLayout->addWidget(dpActionWidget);
     ui->dupScanFrame->setLayout(dupScanFrameStackedLayout);
+    dpActionWidget->actionsButtonPanel()->setVisible(false);
+    ui->dupScanParameterFrame->layout()->addWidget( dpActionWidget->actionsButtonPanel() );
 
     connect(ui->action_About_Qt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(ui->stage1_setupRadioButton, SIGNAL(clicked()), this, SLOT(stageRadioClickEvent()));
@@ -107,7 +111,12 @@ void DLSMainWindow::stageRadioClickEvent()
     else if(ui->stage3_ActionsRadioButton->isChecked())
     {
         dupScanFrameStackedLayout->setCurrentIndex(2);
+        dpActionWidget->actionsButtonPanel()->show();
+        return;
     }
+    //ui->dupScanParameterFrame->layout()->removeWidget( dpActionWidget->actionsButtonPanel() );
+    //ui->dupScanParameterFrame->layout()->takeAt(0);
+    dpActionWidget->actionsButtonPanel()->hide();
 }
 
 void DLSMainWindow::processStart_Suspend()

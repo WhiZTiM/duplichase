@@ -14,6 +14,15 @@ class DActionsListModel : public QAbstractListModel
 public:
     explicit DActionsListModel(QObject *parent = 0);
     void setDuplicates(DLS::DuplicatesContainer container);
+
+    //overriden functions
+    int rowCount(const QModelIndex &parent) const override;
+    QVariant data(const QModelIndex &index, int role) const override;
+
+signals:
+    void logMessage(QString message);
+
+public slots:
     void sortModel(Qt::SortOrder sortOrder = Qt::DescendingOrder);
 
     /*! TODO!!!
@@ -24,19 +33,9 @@ public:
     void filterModelByExtension(const QStringList& extensionList);
     void resetViewItems();
 
-    //overriden functions
-    int rowCount(const QModelIndex &parent) const override;
-    QVariant data(const QModelIndex &index, int role) const override;
-
-signals:
-    void logMessage(QString message);
-
-public slots:
-
 private:
     DLS::DuplicatesContainer duplicates;
     DLS::PathRecommender recommender;
-    QList<DItem*> viewItems;
     QList<int> viewIndexes;
     QList<DItem> items;
     //QHash parentsMap;

@@ -20,32 +20,31 @@ void DActionsListModel::setDuplicates(DLS::DuplicatesContainer container)
 void DActionsListModel::resetViewItems()
 {
     beginResetModel();
-    viewItems.clear();
+    viewIndexes.clear();
     for(int i=0; i < items.size(); i++)
         viewIndexes.push_back( i );
-        //viewItems.push_back( &items[i] );
     endResetModel();
 }
 
 void DActionsListModel::filterModelByExtension(const QStringList &extensionList)
 {
     //
-    for(int i=0; i < viewItems.size(); i++)
+    for(int i=0; i < viewIndexes.size(); i++)
     {
         //
     }
 }
 
-/// THis function exposes the poor design and loose cohesion of this Software. Runs at O(n^2) worst case
+/// THis function exposes the poor design and loose cohesion of this Software. Runs at O(2n + nlogn) worst case
 void DActionsListModel::sortModel(Qt::SortOrder sortOrder)
 {
     beginResetModel();
 
     //Run a linear scan to select the headers in viewItems. also taking note of their positions
     QVector< int > headers;
-    for(int i=0; viewIndexes.size(); i++)
+    for(int i=0; i < viewIndexes.size(); i++)
         if( items[ viewIndexes[i] ].isGroupHeader )
-            headers.push_back( i );
+            headers.push_back( viewIndexes[i] );
 
     auto ascendingSorter = [&]( const int lhs, const int rhs )
     {
@@ -68,7 +67,7 @@ void DActionsListModel::sortModel(Qt::SortOrder sortOrder)
     for(int i = 0; i < headers.size(); i++)
     {
         sortedItems.push_back( headers[i] );
-        const int start = headers[i];
+        const int start =  headers[i];
         const int limit = items[ headers[i] ].header.itemCount() + start;
         for(int k = start + 1; k <= limit; k++)
             sortedItems.push_back( k );
@@ -83,7 +82,6 @@ int DActionsListModel::rowCount(const QModelIndex &parent) const
     Q_UNUSED(parent)
     //if(!parent.isValid())    //toplevel
     //    return duplicates.size();
-    //return viewItems.size();
     return viewIndexes.size();
 }
 
@@ -94,7 +92,6 @@ void DActionsListModel::prepareModel()
     //Assing unique numbers and headers
     beginResetModel();
     items.clear();
-    viewItems.clear();      //!REMOVE
     viewIndexes.clear();
     int i = 1, t_counter = 0;
     for(auto& item : duplicates)
@@ -105,10 +102,8 @@ void DActionsListModel::prepareModel()
         itm.isGroupHeader = true;
         itm.header.topString("Category <<( " + QString::number(i) + " )>>");
         items.push_back(itm);
-        viewItems.push_back( &items.back() );   //!REMOVE
         viewIndexes.push_back( t_counter++ );
         DItem& itmHeader_ref = items.back();    //!KEEP
-        //int header_index = t_counter;
 
         // Clear data for reuse in the for loop below
         itm.header.topString("");
@@ -122,7 +117,6 @@ void DActionsListModel::prepareModel()
             property.setTag(i);
             itm.property = property;
             items.push_back(itm);
-            viewItems.push_back( &items.back() );   //!REMOVE
             viewIndexes.push_back( t_counter++ );
             ++itemCount;
             Set_header_size = true;

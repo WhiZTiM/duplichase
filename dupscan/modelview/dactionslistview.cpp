@@ -1,12 +1,18 @@
-#include <QPainter>
-#include <QStaticText>
 #include "dactionslistview.hpp"
 #include "dupscan/modelview/ditem.hpp"
 #include <boost/filesystem.hpp>
 #include <QMenu>
+#include <QCursor>
 #include <QAction>
+#include <QPainter>
+#include <QFileInfo>
 #include <QKeyEvent>
+#include <QStaticText>
 #include <QMouseEvent>
+#include <QPushButton>
+#include <QHBoxLayout>
+#include <QVBoxLayout>
+#include <QDesktopServices>
 
 Q_DECLARE_METATYPE(DItem)
 
@@ -26,10 +32,32 @@ DActionsListDelegate::DActionsListDelegate(QWidget *parent) :
     QStyledItemDelegate(parent)
 {
     //
-    contextMenu.addAction("Mark for keep");
+    contextMenu.addAction("&Open Directory", this, SLOT(action_openDirectory()));
+    contextMenu.addAction("Open &File", this, SLOT(action_openFile()));
     contextMenu.addSeparator();
+    contextMenu.addAction("Mark for keep");
     contextMenu.addAction("Mark for Deletion");
+    contextMenu.addSeparator();
     contextMenu.addAction("Delete Now");
+}
+
+void DActionsListDelegate::action_openFile()
+{
+    DItem item = currentIndex.data().value<DItem>();
+    if(item.isGroupHeader)
+        return;
+    QString fname(QString::fromStdString( item.property.getFilePath() ));
+    QDesktopServices::openUrl( QUrl::fromLocalFile( fname ) );
+}
+
+void DActionsListDelegate::action_openDirectory()
+{
+    DItem item = currentIndex.data().value<DItem>();
+    if(item.isGroupHeader)
+        return;
+
+    QString fname(QString::fromStdString( item.property.getFilePath() ));
+    QDesktopServices::openUrl( QUrl::fromLocalFile( fname ) );
 }
 
 bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
@@ -45,6 +73,7 @@ bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model,
         {
             QRect rect(mouseEvent->globalPos(), contextMenu.sizeHint());
             contextMenu.setGeometry( rect );
+            currentIndex = index;
             contextMenu.show();
         }
         //if( )
@@ -198,4 +227,59 @@ QString DActionsListDelegate::fileSizeAsString(const ulong size) const
     else                                // Affirmative GB
         rtn = QString::number((size / 1073741824.0), f, dp) + " GB";
     return rtn;
+}
+
+ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
+    :   QWidget(parent)
+{
+    QVBoxLayout *mainLayout         = new QVBoxLayout(this);
+    filter_pushButton               = new QPushButton("&Filter", this);
+    sort_pushButton                 = new QPushButton("&Sort", this);
+    reset_pushButton                = new QPushButton("&Reset", this);
+    autoSelectKeep_pushButton       = new QPushButton("AutoSelect &Keep", this);
+    autoSelectDelete_pushButton     = new QPushButton("AutoSelect &Deletion", this);
+    sort_pushButton->setCheckable(true);
+
+    QFrame* line = new QFrame(this);
+    line->setFrameShape(QFrame::HLine);
+
+    mainLayout->addWidget(filter_pushButton);
+    mainLayout->addWidget(sort_pushButton);
+    //mainLayout->addWidget(line);
+    mainLayout->addWidget(reset_pushButton);
+    mainLayout->addWidget(line);
+    mainLayout->addWidget(autoSelectKeep_pushButton);
+    mainLayout->addWidget(autoSelectDelete_pushButton);
+    mainLayout->addStretch();
+
+    sortContextMenu.addAction("&Descending Order of File size", this, SLOT(sortByDescendingFileSize()));
+    sortContextMenu.addAction("&Ascending Order of File size", this, SLOT(sortByAscendingFileSize()));
+
+    connect(sort_pushButton, SIGNAL(clicked()), this, SLOT(processSortRequest()));
+    connect(filter_pushButton, SIGNAL(clicked()), this, SIGNAL(filteringRequested()));
+    connect(reset_pushButton, SIGNAL(clicked()), this, SIGNAL(resetRequested()));
+    connect(&sortContextMenu, SIGNAL(aboutToHide()), this, SLOT(sortContextMenuAboutToHide()));
+}
+
+void ActionsButtonPanel::processSortRequest()
+{
+    sortContextMenu.setGeometry( QRect( QCursor::pos(), sortContextMenu.sizeHint() ) );
+    sort_pushButton->setChecked(true);
+    sortContextMenu.show();
+    sortContextMenu.exec();
+}
+
+void ActionsButtonPanel::sortByDescendingFileSize()
+{
+    sortingRequested(Qt::DescendingOrder);
+}
+
+void ActionsButtonPanel::sortByAscendingFileSize()
+{
+    sortingRequested(Qt::AscendingOrder);
+}
+
+void ActionsButtonPanel::sortContextMenuAboutToHide()
+{
+    sort_pushButton->setChecked(false);
 }

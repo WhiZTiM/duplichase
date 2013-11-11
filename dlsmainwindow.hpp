@@ -15,6 +15,7 @@ QT_END_NAMESPACE
 class DupScanSetupWidget;
 class DupScanFindWidget;
 class DupScanActionWidget;
+class ActionsButtonPanel;
 
 class DLSMainWindow : public QMainWindow
 {
@@ -40,6 +41,7 @@ private:
     DupScanSetupWidget*     dpSetupWidget;
     DupScanFindWidget*      dpFindWidget;
     DupScanActionWidget*    dpActionWidget;
+    ActionsButtonPanel*     dpActionsPanelWidget;
 
     QVBoxLayout* dupScanSetupFrameLayout;
     QVBoxLayout* dupScanFindFrameLayout;

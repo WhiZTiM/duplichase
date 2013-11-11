@@ -6,6 +6,10 @@
 #include <QMenu>
 #include <QAction>
 
+QT_BEGIN_NAMESPACE
+class QPushButton;
+QT_END_NAMESPACE
+
 class DActionsListDelegate : public QStyledItemDelegate
 {
     Q_OBJECT
@@ -22,10 +26,15 @@ public:
 signals:
     void groupHeaderSelected(QModelIndex) const;
 
+public slots:
+    void action_openFile();
+    void action_openDirectory();
+
 private:
     QString _name;
     QString _size;
     QMenu contextMenu;
+    QModelIndex currentIndex;
 };
 
 class DActionsListView : public QListView
@@ -39,6 +48,32 @@ signals:
 public slots:
     void processGroupHeaderSelected(QModelIndex index);
 
+};
+
+class ActionsButtonPanel : public QWidget
+{
+    Q_OBJECT
+public:
+    explicit ActionsButtonPanel(QWidget* parent = nullptr);
+
+signals:
+    void sortingRequested(Qt::SortOrder);
+    void filteringRequested();
+    void resetRequested();
+public slots:
+
+private slots:
+    void processSortRequest();
+    void sortByDescendingFileSize();
+    void sortByAscendingFileSize();
+    void sortContextMenuAboutToHide();
+private:
+    QPushButton* autoSelectKeep_pushButton;
+    QPushButton* autoSelectDelete_pushButton;
+    QPushButton* reset_pushButton;
+    QPushButton* sort_pushButton;
+    QPushButton* filter_pushButton;
+    QMenu sortContextMenu;
 };
 
 #endif // DACTIONSLISTVIEW_HPP
