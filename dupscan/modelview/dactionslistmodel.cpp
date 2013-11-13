@@ -1,4 +1,5 @@
 #include "dactionslistmodel.hpp"
+#include <QStringList>
 #include <QVector>
 #include <QPair>
 Q_DECLARE_METATYPE(DLS::FileProperty)
@@ -22,17 +23,38 @@ void DActionsListModel::resetViewItems()
     beginResetModel();
     viewIndexes.clear();
     for(int i=0; i < items.size(); i++)
+    {
+        items[i].isChecked = false;
         viewIndexes.push_back( i );
+    }
     endResetModel();
 }
 
 void DActionsListModel::filterModelByExtension(const QStringList &extensionList)
 {
-    //
+    QList<int> filteredList;
+    bool last_iteration_was_group_header = false;
     for(int i=0; i < viewIndexes.size(); i++)
     {
-        //
+        if(items[ viewIndexes[i] ].isGroupHeader)
+        {
+            if(last_iteration_was_group_header)
+                filteredList.removeLast();
+            filteredList.push_back( viewIndexes[i] );
+            last_iteration_was_group_header = true;
+        }
+        else
+        {
+            QString extension(QString::fromStdString( items[viewIndexes[i]].property.getFileExtension() ));
+            if( extensionList.contains( extension, Qt::CaseInsensitive) )
+            {
+                filteredList.append( viewIndexes[i] );
+            }
+            last_iteration_was_group_header = false;
+        }
     }
+
+    filteredList.swap( viewIndexes );
 }
 
 /// THis function exposes the poor design and loose cohesion of this Software. Runs at O(2n + nlogn) worst case
@@ -139,5 +161,21 @@ QVariant DActionsListModel::data(const QModelIndex &index, int role) const
     Q_UNUSED(role);
     if(index.row() >= viewIndexes.size())
         return QVariant();
-    return QVariant::fromValue<DItem>( items[ viewIndexes[index.row()] ] );
+    DItem item = items[ viewIndexes[index.row()] ];
+
+    if(role == Qt::ToolTipRole)
+    {
+        if(item.isGroupHeader)
+            return QVariant(QString());
+        return QVariant( extraPropertyHandle.extraProperty( item.property.getFilePath() ) );
+    }
+
+    item.keepingWeight = recommender.getKeepingWeight( item.property.getFileName() );
+    item.deletionWeight = recommender.getDeletionWeight( item.property.getFileName() );
+    return QVariant::fromValue<DItem>( item );
+}
+
+void DActionsListModel::deleteFiles(QModelIndexList indexes)
+{
+    //
 }

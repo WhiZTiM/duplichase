@@ -5,6 +5,7 @@
 #include <QAbstractListModel>
 #include <QSortFilterProxyModel>
 #include <dupscan/modelview/ditem.hpp>
+#include <dupscan/modelview/extrafileproperty.hpp>
 #include <backend/include/container_helpers/fp_holders.hpp>
 #include <backend/include/recommendation/path_recommender.hpp>
 
@@ -24,6 +25,7 @@ signals:
 
 public slots:
     void sortModel(Qt::SortOrder sortOrder = Qt::DescendingOrder);
+    void deleteFiles(QModelIndexList indexes);
 
     /*! TODO!!!
     void filterModelByPath(const QString& parentPath );
@@ -38,7 +40,7 @@ private:
     DLS::PathRecommender recommender;
     QList<int> viewIndexes;
     QList<DItem> items;
-    //QHash parentsMap;
+    ExtraPropertyHandler extraPropertyHandle;
 
     void prepareModel();
 };

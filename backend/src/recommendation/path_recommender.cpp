@@ -26,17 +26,22 @@ bool PathRecommender::setWeights(const std::string& ToBeDeleted, const std::stri
     return ( accentuate(ToBeDeleted, ToBeKept) );
 }
 
+bool PathRecommender::unsetWeights(const std::string& ToBeDeleted, const std::string& ToBeKept)
+{
+    return ( deAgent.lowerIncoming(ToBeDeleted) && deAgent.lowerOutgoing(ToBeKept) );
+}
+
 void PathRecommender::addPath(const std::string& path)
 {
     deAgent.addPath(path);
 }
 
-unsigned long PathRecommender::getIncomingIndex(const std::string& path)
+unsigned long PathRecommender::getIncomingIndex(const std::string& path) const
 {
     return deAgent.getIncoming(path);
 }
 
-unsigned long PathRecommender::getOutgoingIndex(const std::string& path)
+unsigned long PathRecommender::getOutgoingIndex(const std::string& path) const
 {
     return deAgent.getOutgoing(path);
 }
@@ -90,7 +95,7 @@ bool SimpleDEEdgeAgent::lastgetSuccessful() const
 }
 
 
-unsigned long SimpleDEEdgeAgent::getOutgoing(const std::string& path)
+unsigned long SimpleDEEdgeAgent::getOutgoing(const std::string& path) const
 {
     unsigned long rtn = 0;
     const DirectoryElement* element = find(path);
@@ -115,7 +120,7 @@ unsigned long SimpleDEEdgeAgent::getOutgoing(const std::string& path)
 }
 
 
-unsigned long SimpleDEEdgeAgent::getIncoming(const std::string& path)
+unsigned long SimpleDEEdgeAgent::getIncoming(const std::string& path) const
 {
     unsigned long rtn = 0;
     const DirectoryElement* element = find(path);
@@ -140,7 +145,7 @@ unsigned long SimpleDEEdgeAgent::getIncoming(const std::string& path)
 }
 
 
-const DirectoryElement* SimpleDEEdgeAgent::find(const std::string& path)
+const DirectoryElement* SimpleDEEdgeAgent::find(const std::string& path) const
 {
     auto iter = mStringElem.find(path);
     if(iter == mStringElem.end())
@@ -216,6 +221,7 @@ bool SimpleDEEdgeAgent::lowerIncoming(const std::string& path)
 
 const DEEdgeProperty* DEEdgeProperty::Clone(const DirectoryElement* parent) const
 {
+    (void)parent;
     return new DEEdgeProperty();
 }
 

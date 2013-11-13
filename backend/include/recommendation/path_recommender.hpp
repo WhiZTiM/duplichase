@@ -44,18 +44,18 @@ namespace DLS
             bool raiseIncoming(const std::string&);
             bool lowerIncoming(const std::string&);
             bool lowerOutgoing(const std::string&);
-            unsigned long getIncoming(const std::string&);
-            unsigned long getOutgoing(const std::string&);
+            unsigned long getIncoming(const std::string&) const;
+            unsigned long getOutgoing(const std::string&) const;
             bool lastgetSuccessful() const;
         private:
             std::unordered_map<std::string, Tree::DirectoryElement*> mStringElem;
             Tree::DirectoryElement* rootElement = nullptr;
-            bool _success = false;
+            mutable bool _success = false;
 
-            inline const DEEdgeProperty* cast(const Tree::IDirectoryElementProperty* property)
+            inline const DEEdgeProperty* cast(const Tree::IDirectoryElementProperty* property) const
             { return static_cast<const DEEdgeProperty*>(property); }
 
-            const Tree::DirectoryElement* find(const std::string& path);
+            const Tree::DirectoryElement* find(const std::string& path) const;
     };
 
 
@@ -69,10 +69,11 @@ namespace DLS
             //! \a giver is delete. \a reciever is keep
             bool accentuate(const std::string& giver, const std::string& reciever);
             bool setWeights(const std::string& ToBeDeleted, const std::string& ToBeKept);
-            unsigned long getIncomingIndex(const std::string& path);
-            unsigned long getOutgoingIndex(const std::string& path);
-            unsigned long getKeepingWeight (const std::string& path) { return getOutgoingIndex(path); }
-            unsigned long getDeletionWeight(const std::string& path) { return getIncomingIndex(path); }
+            bool unsetWeights(const std::string& ToBeDeleted, const std::string& ToBeKept);
+            unsigned long getIncomingIndex(const std::string& path) const;
+            unsigned long getOutgoingIndex(const std::string& path) const;
+            unsigned long getKeepingWeight(const std::string& path) const { return getOutgoingIndex(path); }
+            unsigned long getDeletionWeight(const std::string& path)const { return getIncomingIndex(path); }
 
             virtual ~PathRecommender();
         protected:

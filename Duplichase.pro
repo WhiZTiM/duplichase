@@ -42,7 +42,8 @@ SOURCES += \
     dupscan/logformatter.cpp \
     dupscan/useful_qt_functions.cpp \
     dupscan/useful_functions.cpp \
-    dupscan/modelview/dactionslistview.cpp
+    dupscan/modelview/dactionslistview.cpp \
+    dupscan/modelview/extrafileproperty.cpp
 
 HEADERS  += \
 	backend/include/container_helpers/fp_holders.hpp \
@@ -79,7 +80,8 @@ HEADERS  += \
     dupscan/modelview/ditem.hpp \
     dupscan/logformatter.hpp \
     dupscan/modelview/dactionslistview.hpp \
-    test/fileproperty/sample_fileProperty.hpp
+    test/fileproperty/sample_fileProperty.hpp \
+    dupscan/modelview/extrafileproperty.hpp
 
 #FORMS    += \
 #    UI/mainwindow.ui \

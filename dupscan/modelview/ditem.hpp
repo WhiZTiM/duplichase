@@ -27,11 +27,19 @@ private:
 struct DItem
 {
     bool isGroupHeader = false;
+    bool isChecked = false;
     DLS::FileProperty property;
     GroupHeader header;
     unsigned long deletionWeight;
     unsigned long keepingWeight;
 };
+
+/*
+struct ExtraProperty
+{
+    //QString
+};
+*/
 
 inline bool operator == (const DItem& lhs, const DItem& rhs)
 {

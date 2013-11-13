@@ -4,6 +4,7 @@
 #include <QMenu>
 #include <QCursor>
 #include <QAction>
+#include <QToolTip>
 #include <QPainter>
 #include <QFileInfo>
 #include <QKeyEvent>
@@ -15,6 +16,11 @@
 #include <QDesktopServices>
 
 Q_DECLARE_METATYPE(DItem)
+
+QString parent_of_generic_path(const std::string path)
+{
+    return QString::fromStdString( path.substr(0, path.rfind('/')) );
+}
 
 DActionsListView::DActionsListView(QWidget *parent) :
     QListView(parent)
@@ -56,7 +62,7 @@ void DActionsListDelegate::action_openDirectory()
     if(item.isGroupHeader)
         return;
 
-    QString fname(QString::fromStdString( item.property.getFilePath() ));
+    QString fname( parent_of_generic_path( item.property.getFilePath() ));
     QDesktopServices::openUrl( QUrl::fromLocalFile( fname ) );
 }
 
@@ -77,6 +83,13 @@ bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model,
             contextMenu.show();
         }
         //if( )
+    }
+    if(event->type() == QEvent::MouseMove)
+    {
+        if(QToolTip::isVisible())
+            return false;
+        QString data = index.data(Qt::ToolTipRole).toString();
+        QToolTip::showText(QCursor::pos(), data);
     }
     if(event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
     {
