@@ -25,15 +25,18 @@ signals:
 
 public slots:
     void sortModel(Qt::SortOrder sortOrder = Qt::DescendingOrder);
-    void deleteFiles(QModelIndexList indexes);
+    void filterModelByExtension(const QStringList& extensionList);
+    void resetViewItems();
 
+    void selectForDeletion(QModelIndex index);
+    void selectForKeep(QModelIndex index);
+    void deselectForDeletion(QModelIndex index);
+    void deselectForKeep(QModelIndex index);
     /*! TODO!!!
     void filterModelByPath(const QString& parentPath );
     void filterModelBySize(ulong min, ulong max);
     */
 
-    void filterModelByExtension(const QStringList& extensionList);
-    void resetViewItems();
 
 private:
     DLS::DuplicatesContainer duplicates;

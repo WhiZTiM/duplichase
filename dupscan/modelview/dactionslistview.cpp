@@ -37,14 +37,19 @@ void DActionsListView::processGroupHeaderSelected(QModelIndex index)
 DActionsListDelegate::DActionsListDelegate(QWidget *parent) :
     QStyledItemDelegate(parent)
 {
-    //
-    contextMenu.addAction("&Open Directory", this, SLOT(action_openDirectory()));
-    contextMenu.addAction("Open &File", this, SLOT(action_openFile()));
+    openDirectoryAction = contextMenu.addAction("&Open Directory", this, SLOT(action_openDirectory()));
+    openFileAction      = contextMenu.addAction("Open &File", this, SLOT(action_openFile()));
     contextMenu.addSeparator();
-    contextMenu.addAction("Mark for keep");
-    contextMenu.addAction("Mark for Deletion");
+    keepAction          = contextMenu.addAction("Mark for keep", this, SLOT(action_markForKeep()));
+    deleteAction        = contextMenu.addAction("Mark for Deletion", this, SLOT(action_markForDelete()));
     contextMenu.addSeparator();
-    contextMenu.addAction("Delete Now");
+    deleteNowAction     = contextMenu.addAction("Delete Now", this, SLOT(action_deletFileNow()));
+
+    openDirectoryAction->setToolTip(tr("Opens The directory where this file is contained"));
+    openFileAction->setToolTip(tr("Opens the File with default Application"));
+    deleteNowAction->setToolTip("Deletes the File Now");
+    keepAction->setCheckable(true);
+    deleteAction->setCheckable(true);
 }
 
 void DActionsListDelegate::action_openFile()
@@ -66,9 +71,74 @@ void DActionsListDelegate::action_openDirectory()
     QDesktopServices::openUrl( QUrl::fromLocalFile( fname ) );
 }
 
+void DActionsListDelegate::action_markForKeep()
+{
+    if(keepAction->isChecked())
+        emit unmarkForKeep(currentIndex);
+    else
+        emit markForKeep(currentIndex);
+}
+
+void DActionsListDelegate::action_markForDelete()
+{
+    if(deleteAction->isChecked())
+        emit unmarkForDelete(currentIndex);
+    else
+        emit markForDelete(currentIndex);
+}
+
+void DActionsListDelegate::action_deletFileNow()
+{
+    emit deleteFileNow(currentIndex);
+}
+
+void DActionsListDelegate::prepareContextMenu()
+{
+    DItem item = currentIndex.data().value<DItem>();
+    if(item.isGroupHeader)
+    {
+        keepAction->setDisabled(true);
+        deleteAction->setDisabled(true);
+        deleteNowAction->setDisabled(true);
+        openFileAction->setDisabled(true);
+        openDirectoryAction->setDisabled(true);
+    }
+
+    keepAction->setEnabled(true);
+    deleteAction->setEnabled(true);
+    deleteNowAction->setEnabled(true);
+    openFileAction->setEnabled(true);
+    openDirectoryAction->setEnabled(true);
+    if(item.isDeleteChecked)
+    {
+        deleteAction->setChecked(true);
+        deleteAction->setText(tr("Unmark for Deletion"));
+        deleteAction->setToolTip(tr("Unmarks this file for Deletion"));
+    }
+    else
+    {
+        deleteAction->setChecked(false);
+        deleteAction->setText(tr("Mark for Deletion"));
+        deleteAction->setToolTip(tr("Marks this file for Deletion"));
+    }
+    if(item.isKeepChecked)
+    {
+        keepAction->setChecked(true);
+        keepAction->setText(tr("Unmark for Keep"));
+        keepAction->setToolTip(tr("Unmarks this file from Keepers"));
+    }
+    else
+    {
+        keepAction->setChecked(false);
+        keepAction->setText(tr("Mark for Keep"));
+        keepAction->setToolTip(tr("Unmarks this file from Keepers"));
+    }
+}
+
 bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
 {
-#if 1
+    Q_UNUSED(model)
+    Q_UNUSED(option)
     if(event->type() == QEvent::MouseButtonPress)
     {
         //
@@ -80,9 +150,9 @@ bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model,
             QRect rect(mouseEvent->globalPos(), contextMenu.sizeHint());
             contextMenu.setGeometry( rect );
             currentIndex = index;
+            prepareContextMenu();
             contextMenu.show();
         }
-        //if( )
     }
     if(event->type() == QEvent::MouseMove)
     {
@@ -90,11 +160,13 @@ bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model,
             return false;
         QString data = index.data(Qt::ToolTipRole).toString();
         QToolTip::showText(QCursor::pos(), data);
+        return true;
     }
     if(event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
     {
         std::cerr << "KEY Pressed " << std::endl;
     }
+#if 0
     if(event->type() == QEvent::ContextMenu)
     {
         std::cerr << "ContextMenu" << std::endl;
@@ -106,6 +178,10 @@ bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model,
 void DActionsListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
     //QStyledItemDelegate::paint(painter, option, index);
+
+    static const QPixmap deleteIconPixMap(":/icons/icons/delete-crosshair-icon.png");
+    static const QPixmap keepIconPixMap(":/icons/icons/keep-vgood-icon.png");
+
     DItem item = index.data().value<DItem>();
     DLS::FileProperty fprop = item.property;
     QString name;
@@ -209,6 +285,17 @@ void DActionsListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &
     rect_major.translate( 200, 0 );
     painter->setPen( QColor(0, 220, 0) );
     painter->drawText( rect_major, k_align, keepingWeight );
+
+    //drawPixMaps as necessary
+    static const int dd = 20;
+    int dx1 = option.rect.width() * 0.95;
+    int dy1 = option.rect.height() * 0.2 + option.rect.top();
+    QRect checkedIconArea(dx1, dy1, dd, dd);
+
+    if(item.isKeepChecked)
+        painter->drawPixmap(checkedIconArea, keepIconPixMap);
+    else if(item.isDeleteChecked)
+        painter->drawPixmap(checkedIconArea, deleteIconPixMap);
 
     //restore original
     painter->setFont( originalFont );

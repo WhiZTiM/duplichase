@@ -25,6 +25,7 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     layout()->addWidget( view );
 
     connect(actionsButton, SIGNAL(sortingRequested(Qt::SortOrder)), model, SLOT(sortModel(Qt::SortOrder)));
+    connect(actionsButton, SIGNAL(resetRequested()), model, SLOT(resetViewItems()));
 
     model->setDuplicates( sampleDuplicateContainer() );
 

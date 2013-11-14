@@ -24,7 +24,6 @@ void DActionsListModel::resetViewItems()
     viewIndexes.clear();
     for(int i=0; i < items.size(); i++)
     {
-        items[i].isChecked = false;
         viewIndexes.push_back( i );
     }
     endResetModel();
@@ -113,10 +112,22 @@ void DActionsListModel::prepareModel()
 {
     //Assing unique numbers and headers
     beginResetModel();
+
+    std::vector<DLS::ptrVEC_FileProperty> vec_duplicates;
+    auto cmp_ptrVEC_FileProperty =
+            [](const DLS::ptrVEC_FileProperty& lhs, const DLS::ptrVEC_FileProperty& rhs) -> bool
+    {
+        return lhs->back().getSize() > rhs->back().getSize();
+    };
+
+    for(auto i : duplicates)
+        vec_duplicates.push_back(i);
+    std::sort(vec_duplicates.begin(), vec_duplicates.end(), cmp_ptrVEC_FileProperty);
+
     items.clear();
     viewIndexes.clear();
     int i = 1, t_counter = 0;
-    for(auto& item : duplicates)
+    for(auto& item : vec_duplicates)
     {
         DItem itm;
         itm.deletionWeight = 0;
@@ -158,9 +169,9 @@ void DActionsListModel::prepareModel()
 
 QVariant DActionsListModel::data(const QModelIndex &index, int role) const
 {
-    Q_UNUSED(role);
-    if(index.row() >= viewIndexes.size())
-        return QVariant();
+    //if(index.row() >= viewIndexes.size())
+    //    return QVariant();        --- - - > REPLACED WITH AN ASSERTION
+    Q_ASSERT_X( index.row() < viewIndexes.size(), "dataRequest", " Out of range index requested! " );
     DItem item = items[ viewIndexes[index.row()] ];
 
     if(role == Qt::ToolTipRole)
@@ -175,7 +186,30 @@ QVariant DActionsListModel::data(const QModelIndex &index, int role) const
     return QVariant::fromValue<DItem>( item );
 }
 
-void DActionsListModel::deleteFiles(QModelIndexList indexes)
+void DActionsListModel::selectForDeletion(QModelIndex index)
 {
-    //
+    Q_ASSERT_X( index.row() < viewIndexes.size(), "selectionForDeletion", " Out of range index requested! " );
+    items[ viewIndexes[ index.row() ] ].isDeleteChecked = true;
+    emit dataChanged(index, index);
+}
+
+void DActionsListModel::selectForKeep(QModelIndex index)
+{
+    Q_ASSERT_X( index.row() < viewIndexes.size(), "selectionForKeep", " Out of range index requested! " );
+    items[ viewIndexes[ index.row() ] ].isKeepChecked = true;
+    emit dataChanged(index, index);
+}
+
+void DActionsListModel::deselectForDeletion(QModelIndex index)
+{
+    Q_ASSERT_X( index.row() < viewIndexes.size(), "deselectionForDeletion", " Out of range index requested! " );
+    items[ viewIndexes[ index.row() ] ].isDeleteChecked = false;
+    emit dataChanged(index, index);
+}
+
+void DActionsListModel::deselectForKeep(QModelIndex index)
+{
+    Q_ASSERT_X( index.row() < viewIndexes.size(), "deselectionForKeep", " Out of range index requested! " );
+    items[ viewIndexes[ index.row() ] ].isKeepChecked = false;
+    emit dataChanged(index, index);
 }

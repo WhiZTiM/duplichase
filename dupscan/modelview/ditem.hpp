@@ -27,7 +27,8 @@ private:
 struct DItem
 {
     bool isGroupHeader = false;
-    bool isChecked = false;
+    bool isDeleteChecked = false;
+    bool isKeepChecked = false;
     DLS::FileProperty property;
     GroupHeader header;
     unsigned long deletionWeight;
@@ -35,6 +36,12 @@ struct DItem
 };
 
 /*
+struct DItemSelection
+{
+    bool toDelete = false;
+    bool toKeep = false;
+};
+
 struct ExtraProperty
 {
     //QString

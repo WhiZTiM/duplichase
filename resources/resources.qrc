@@ -9,4 +9,8 @@
     <qresource prefix="/stylesheet">
         <file alias="mainStyle">stylesheet/main_style.css</file>
     </qresource>
+    <qresource prefix="/icons">
+        <file>icons/delete-crosshair-icon.png</file>
+        <file>icons/keep-vgood-icon.png</file>
+    </qresource>
 </RCC>

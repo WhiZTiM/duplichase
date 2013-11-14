@@ -25,16 +25,31 @@ public:
 
 signals:
     void groupHeaderSelected(QModelIndex) const;
+    void deleteFileNow(QModelIndex);
+    void markForKeep(QModelIndex);
+    void markForDelete(QModelIndex);
+    void unmarkForKeep(QModelIndex);
+    void unmarkForDelete(QModelIndex);
 
 public slots:
     void action_openFile();
     void action_openDirectory();
+    void action_deletFileNow();
+    void action_markForKeep();
+    void action_markForDelete();
 
 private:
     QString _name;
     QString _size;
     QMenu contextMenu;
     QModelIndex currentIndex;
+
+    QAction* keepAction;
+    QAction* deleteAction;
+    QAction* deleteNowAction;
+    QAction* openFileAction;
+    QAction* openDirectoryAction;
+    void prepareContextMenu();
 };
 
 class DActionsListView : public QListView
