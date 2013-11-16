@@ -14,6 +14,7 @@ ExtraPropertyHandler::ExtraPropertyHandler(int cacheSize, QObject *parent)
 {
     int maxCount = QThread::idealThreadCount() < 0 ? 4 : (QThread::idealThreadCount() + 3);
     threadPool.setMaxThreadCount( maxCount );
+    threadPool.setExpiryTimeout(3000);
 }
 
 void ExtraPropertyHandler::setMaxDelayTime(uint value)

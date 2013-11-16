@@ -33,6 +33,7 @@ struct DItem
     GroupHeader header;
     unsigned long deletionWeight;
     unsigned long keepingWeight;
+    int parentIndex = -1;
 };
 
 /*

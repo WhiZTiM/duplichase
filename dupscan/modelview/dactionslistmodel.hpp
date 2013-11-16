@@ -28,10 +28,12 @@ public slots:
     void filterModelByExtension(const QStringList& extensionList);
     void resetViewItems();
 
-    void selectForDeletion(QModelIndex index);
-    void selectForKeep(QModelIndex index);
-    void deselectForDeletion(QModelIndex index);
-    void deselectForKeep(QModelIndex index);
+    void commitMarkings();
+    void selectForDeletion(QModelIndexList indexes);
+    void selectForKeep(QModelIndexList indexes);
+    void deselectForDeletion(QModelIndexList indexes);
+    void deselectForKeep(QModelIndexList indexes);
+    void deleteFilesNow(QModelIndexList indexes);
     /*! TODO!!!
     void filterModelByPath(const QString& parentPath );
     void filterModelBySize(ulong min, ulong max);

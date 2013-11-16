@@ -19,9 +19,9 @@ public:
     QString fileNameAsString(const std::string& name) const;
     QString fileSizeAsString(const ulong size) const;
     //bool eventFilter(QObject *object, QEvent *event);
-    bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index);
-    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const;
-    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const;
+   // bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index);
+    void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
+    QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
 signals:
     void groupHeaderSelected(QModelIndex) const;
@@ -57,13 +57,38 @@ class DActionsListView : public QListView
     Q_OBJECT
 public:
     explicit DActionsListView(QWidget *parent = 0);
+    bool viewportEvent(QEvent *event) override;
+    void keyPressEvent(QKeyEvent *event) override;
 
 signals:
+    void deleteFileNow(QModelIndexList);
+    void markForKeep(QModelIndexList);
+    void markForDelete(QModelIndexList);
+    void unmarkForKeep(QModelIndexList);
+    void unmarkForDelete(QModelIndexList);
 
 public slots:
     void processGroupHeaderSelected(QModelIndex index);
+    void action_openFile();
+    void action_openDirectory();
+    void action_deletFileNow();
+    void action_markForKeep();
+    void action_markForDelete();
 
+private:
+    QMenu contextMenu;
+    bool keepActionChecked = false;
+    bool deleteActionChecked = false;
+
+    QAction* keepAction;
+    QAction* commitAction;
+    QAction* deleteAction;
+    QAction* deleteNowAction;
+    QAction* openFileAction;
+    QAction* openDirectoryAction;
+    void prepareContextMenu();
 };
+
 
 class ActionsButtonPanel : public QWidget
 {
@@ -88,6 +113,7 @@ private:
     QPushButton* reset_pushButton;
     QPushButton* sort_pushButton;
     QPushButton* filter_pushButton;
+    QPushButton* commit_pushButton;
     QMenu sortContextMenu;
 };
 

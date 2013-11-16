@@ -22,10 +22,138 @@ QString parent_of_generic_path(const std::string path)
     return QString::fromStdString( path.substr(0, path.rfind('/')) );
 }
 
+
+///////////////////////////////////////////////////////////////
+/// \brief DActionsListView::DActionsListView
+/// \param parent
+//////////////////////////////////////////////////////////////////
 DActionsListView::DActionsListView(QWidget *parent) :
-    QListView(parent)
+    QListView(parent), contextMenu(this)
 {
-    //
+    openDirectoryAction = contextMenu.addAction("&Open Directory", this, SLOT(action_openDirectory()));
+    openFileAction      = contextMenu.addAction("Open &File", this, SLOT(action_openFile()));
+    contextMenu.addSeparator();
+    keepAction          = contextMenu.addAction("Mark for keep", this, SLOT(action_markForKeep()));
+    deleteAction        = contextMenu.addAction("Mark for Deletion", this, SLOT(action_markForDelete()));
+    contextMenu.addSeparator();
+    deleteNowAction     = contextMenu.addAction("Delete Now", this, SLOT(action_deletFileNow()));
+
+    openDirectoryAction->setToolTip(tr("Opens The directory where this file is contained"));
+    openFileAction->setToolTip(tr("Opens the File with default Application"));
+    deleteNowAction->setToolTip("Deletes the File Now");
+    keepAction->setCheckable(true);
+    deleteAction->setCheckable(true);
+}
+
+void DActionsListView::action_openFile()
+{
+    if(!currentIndex().isValid())
+        return;
+    DItem item = currentIndex().data().value<DItem>();
+    if(item.isGroupHeader)
+        return;
+    QString fname(QString::fromStdString( item.property.getFilePath() ));
+    QDesktopServices::openUrl( QUrl::fromLocalFile( fname ) );
+}
+
+void DActionsListView::action_openDirectory()
+{
+    if(!currentIndex().isValid())
+        return;
+    DItem item = currentIndex().data().value<DItem>();
+    if(item.isGroupHeader)
+        return;
+
+    QString fname( parent_of_generic_path( item.property.getFilePath() ));
+    QDesktopServices::openUrl( QUrl::fromLocalFile( fname ) );
+}
+
+void DActionsListView::action_markForKeep()
+{
+
+    //if(keepAction->isChecked())
+    if(keepActionChecked)
+    {
+        keepAction->setChecked(false);
+        keepActionChecked = false;
+        emit unmarkForKeep(selectionModel()->selectedIndexes());
+    }
+    else
+    {
+        keepAction->setChecked(true);
+        keepActionChecked = true;
+        emit markForKeep(selectionModel()->selectedIndexes());
+    }
+}
+
+void DActionsListView::action_markForDelete()
+{
+    //if(deleteAction->isChecked())
+    if(deleteActionChecked)
+    {
+        deleteAction->setChecked(false);
+        deleteActionChecked = false;
+        emit unmarkForDelete(selectionModel()->selectedIndexes());
+    }
+    else
+    {
+        deleteAction->setChecked(true);
+        deleteActionChecked = true;
+        emit markForDelete(selectionModel()->selectedIndexes());
+    }
+}
+
+void DActionsListView::action_deletFileNow()
+{
+    //! We do not want the user to accidentally delete somefiles outside the view
+    emit deleteFileNow(selectedIndexes());
+}
+
+void DActionsListView::prepareContextMenu()
+{
+    DItem item = currentIndex().data().value<DItem>();
+    if(item.isGroupHeader)
+    {
+        keepAction->setDisabled(true);
+        deleteAction->setDisabled(true);
+        deleteNowAction->setDisabled(true);
+        openFileAction->setDisabled(true);
+        openDirectoryAction->setDisabled(true);
+    }
+
+    keepAction->setEnabled(true);
+    deleteAction->setEnabled(true);
+    deleteNowAction->setEnabled(true);
+    openFileAction->setEnabled(true);
+    openDirectoryAction->setEnabled(true);
+    if(item.isDeleteChecked)
+    {
+        deleteAction->setChecked(true);
+        deleteActionChecked = true;
+        deleteAction->setText(tr("Unmark for Deletion"));
+        deleteAction->setToolTip(tr("Unmarks this file for Deletion"));
+    }
+    else
+    {
+        deleteAction->setChecked(false);
+        deleteActionChecked = false;
+        deleteAction->setText(tr("Mark for Deletion"));
+        deleteAction->setToolTip(tr("Marks this file for Deletion"));
+    }
+    if(item.isKeepChecked)
+    {
+        keepAction->setChecked(true);
+        keepActionChecked = true;
+        keepAction->setText(tr("Unmark for Keep"));
+        keepAction->setToolTip(tr("Unmarks this file from Keepers"));
+    }
+    else
+    {
+        keepAction->setChecked(false);
+        keepActionChecked = false;
+        keepAction->setText(tr("Mark for Keep"));
+        keepAction->setToolTip(tr("Unmarks this file from Keepers"));
+    }
 }
 
 void DActionsListView::processGroupHeaderSelected(QModelIndex index)
@@ -34,6 +162,47 @@ void DActionsListView::processGroupHeaderSelected(QModelIndex index)
     //
 }
 
+
+
+bool DActionsListView::viewportEvent(QEvent *event)
+{
+    QListView::viewportEvent(event);
+    bool rtn = true;
+    if(event->type() == QEvent::MouseButtonPress)
+    {
+        std::cerr << "\nAccepted Mouse Release" << std::endl;
+        QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
+        if(mouseEvent->button() == Qt::RightButton)
+        {
+            QRect rect(mouseEvent->globalPos(), contextMenu.sizeHint());
+            contextMenu.setGeometry( rect );
+            std::cerr << "KeepActionBB: " << keepAction->isChecked() << std::endl;
+            prepareContextMenu();
+            std::cerr << "KeepActionAA: " << keepAction->isChecked() << std::endl;
+            contextMenu.show();
+        }
+    }
+    return rtn;
+    //return true;
+}
+
+void DActionsListView::keyPressEvent(QKeyEvent *event)
+{
+    std::cerr << event->text().toStdString() << std::endl;
+}
+
+
+
+
+
+
+
+
+
+///////////////////////////////////////////////////////////////
+/// \brief DActionsListDelegate::DActionsListDelegate
+/// \param parent
+///
 DActionsListDelegate::DActionsListDelegate(QWidget *parent) :
     QStyledItemDelegate(parent)
 {
@@ -135,6 +304,7 @@ void DActionsListDelegate::prepareContextMenu()
     }
 }
 
+/*
 bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
 {
     Q_UNUSED(model)
@@ -174,6 +344,7 @@ bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model,
 #endif
     return false;
 }
+*/
 
 void DActionsListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
@@ -338,18 +509,23 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     reset_pushButton                = new QPushButton("&Reset", this);
     autoSelectKeep_pushButton       = new QPushButton("AutoSelect &Keep", this);
     autoSelectDelete_pushButton     = new QPushButton("AutoSelect &Deletion", this);
+    commit_pushButton               = new QPushButton("&Commit", this);
     sort_pushButton->setCheckable(true);
 
     QFrame* line = new QFrame(this);
     line->setFrameShape(QFrame::HLine);
 
+    QFrame* line2 = new QFrame(this);
+    line->setFrameShape(QFrame::HLine);
+
+    mainLayout->addWidget(commit_pushButton);
+    mainLayout->addWidget(line);
     mainLayout->addWidget(filter_pushButton);
     mainLayout->addWidget(sort_pushButton);
-    //mainLayout->addWidget(line);
     mainLayout->addWidget(reset_pushButton);
-    mainLayout->addWidget(line);
     mainLayout->addWidget(autoSelectKeep_pushButton);
     mainLayout->addWidget(autoSelectDelete_pushButton);
+    mainLayout->addWidget(line2);
     mainLayout->addStretch();
 
     sortContextMenu.addAction("&Descending Order of File size", this, SLOT(sortByDescendingFileSize()));

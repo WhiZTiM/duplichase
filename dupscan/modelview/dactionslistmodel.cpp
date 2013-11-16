@@ -2,6 +2,7 @@
 #include <QStringList>
 #include <QVector>
 #include <QPair>
+#include <QFile>
 Q_DECLARE_METATYPE(DLS::FileProperty)
 Q_DECLARE_METATYPE(DItem)
 
@@ -91,7 +92,10 @@ void DActionsListModel::sortModel(Qt::SortOrder sortOrder)
         const int start =  headers[i];
         const int limit = items[ headers[i] ].header.itemCount() + start;
         for(int k = start + 1; k <= limit; k++)
+        {
+            items[ k ].parentIndex = headers[i];
             sortedItems.push_back( k );
+        }
     }
     sortedItems.swap( viewIndexes );
 
@@ -126,7 +130,7 @@ void DActionsListModel::prepareModel()
 
     items.clear();
     viewIndexes.clear();
-    int i = 1, t_counter = 0;
+    int i = 1, t_counter = 0, headerIndex = 0;
     for(auto& item : vec_duplicates)
     {
         DItem itm;
@@ -135,6 +139,8 @@ void DActionsListModel::prepareModel()
         itm.isGroupHeader = true;
         itm.header.topString("Category <<( " + QString::number(i) + " )>>");
         items.push_back(itm);
+
+        headerIndex = t_counter;
         viewIndexes.push_back( t_counter++ );
         DItem& itmHeader_ref = items.back();    //!KEEP
 
@@ -146,9 +152,10 @@ void DActionsListModel::prepareModel()
         bool Set_header_size = false;   //did the loop execute?
         for(auto& property : *item)
         {
-            recommender.addPath( property.getFileName() );
+            recommender.addPath( property.getFilePath() );
             property.setTag(i);
             itm.property = property;
+            itm.parentIndex = headerIndex;
             items.push_back(itm);
             viewIndexes.push_back( t_counter++ );
             ++itemCount;
@@ -181,35 +188,122 @@ QVariant DActionsListModel::data(const QModelIndex &index, int role) const
         return QVariant( extraPropertyHandle.extraProperty( item.property.getFilePath() ) );
     }
 
-    item.keepingWeight = recommender.getKeepingWeight( item.property.getFileName() );
-    item.deletionWeight = recommender.getDeletionWeight( item.property.getFileName() );
+    item.keepingWeight = recommender.getKeepingWeight( item.property.getFilePath() );
+    item.deletionWeight = recommender.getDeletionWeight( item.property.getFilePath() );
     return QVariant::fromValue<DItem>( item );
 }
 
-void DActionsListModel::selectForDeletion(QModelIndex index)
+void DActionsListModel::selectForDeletion(QModelIndexList indexes)
 {
-    Q_ASSERT_X( index.row() < viewIndexes.size(), "selectionForDeletion", " Out of range index requested! " );
-    items[ viewIndexes[ index.row() ] ].isDeleteChecked = true;
-    emit dataChanged(index, index);
+    for(auto const& index : indexes)
+    {
+        Q_ASSERT_X( index.row() < viewIndexes.size(), "selectionForDeletion", " Out of range index requested! " );
+        items[ viewIndexes[ index.row() ] ].isDeleteChecked = true;
+        items[ viewIndexes[ index.row() ] ].isKeepChecked = false;
+        emit dataChanged(index, index);
+    }
 }
 
-void DActionsListModel::selectForKeep(QModelIndex index)
+void DActionsListModel::selectForKeep(QModelIndexList indexes)
 {
-    Q_ASSERT_X( index.row() < viewIndexes.size(), "selectionForKeep", " Out of range index requested! " );
-    items[ viewIndexes[ index.row() ] ].isKeepChecked = true;
-    emit dataChanged(index, index);
+    for(auto const& index : indexes)
+    {
+        Q_ASSERT_X( index.row() < viewIndexes.size(), "selectionForKeep", " Out of range index requested! " );
+        items[ viewIndexes[ index.row() ] ].isKeepChecked = true;
+        items[ viewIndexes[ index.row() ] ].isDeleteChecked = false;
+        emit dataChanged(index, index);
+    }
 }
 
-void DActionsListModel::deselectForDeletion(QModelIndex index)
+void DActionsListModel::deselectForDeletion(QModelIndexList indexes)
 {
-    Q_ASSERT_X( index.row() < viewIndexes.size(), "deselectionForDeletion", " Out of range index requested! " );
-    items[ viewIndexes[ index.row() ] ].isDeleteChecked = false;
-    emit dataChanged(index, index);
+    for(auto const& index : indexes)
+    {
+        Q_ASSERT_X( index.row() < viewIndexes.size(), "deselectionForDeletion", " Out of range index requested! " );
+        items[ viewIndexes[ index.row() ] ].isDeleteChecked = false;
+        emit dataChanged(index, index);
+    }
 }
 
-void DActionsListModel::deselectForKeep(QModelIndex index)
+void DActionsListModel::deselectForKeep(QModelIndexList indexes)
 {
-    Q_ASSERT_X( index.row() < viewIndexes.size(), "deselectionForKeep", " Out of range index requested! " );
-    items[ viewIndexes[ index.row() ] ].isKeepChecked = false;
-    emit dataChanged(index, index);
+    for(auto const& index : indexes)
+    {
+        Q_ASSERT_X( index.row() < viewIndexes.size(), "deselectionForKeep", " Out of range index requested! " );
+        items[ viewIndexes[ index.row() ] ].isKeepChecked = false;
+        emit dataChanged(index, index);
+    }
+}
+
+void DActionsListModel::deleteFilesNow(QModelIndexList indexes)
+{
+    QModelIndex parent;
+    int r = 0;
+
+    qSort(indexes.begin(), indexes.end(),
+          [](const QModelIndex& lhs, const QModelIndex& rhs) { return lhs.row() < rhs.row(); });
+
+    for(auto const& i : indexes)
+    {
+        int index = i.row() - r;
+        const int vIndex = viewIndexes[ index ];
+        Q_ASSERT_X( index < viewIndexes.size(), "Deletion", " Out of range index requested! " );
+        if(items[ vIndex ].isGroupHeader)
+            continue;
+        ++r;
+
+        beginRemoveRows(parent, index, index);
+        const int k = items.at( vIndex ).parentIndex;
+        items[k].header.itemCount( items.at(k).header.itemCount() - 1 );
+
+        Q_ASSERT_X(k < index, "Deletion: Parent check", "This is a BUG!!!");
+        Q_ASSERT_X(k < vIndex, "Deletion: Parent check", "This is a BADDD BUG!!!");
+        bool removeLastSeenHeader = (items.at(k).header.itemCount() < 1) ? true : false;
+
+        recommender.setWeights( items.at(vIndex).property.getFilePath() , std::string() );
+        items.removeAt( vIndex );
+        viewIndexes.removeAt(index);
+
+        for(int lp = 0; lp < viewIndexes.size(); lp++)
+        {
+            if(viewIndexes[lp] > vIndex)
+                viewIndexes[lp] = viewIndexes[lp] - 1;
+        }
+        for (int lc = 0; lc < items.size(); ++lc)
+            if(items.at(lc).parentIndex > vIndex)
+                --(items[lc].parentIndex);
+
+        endRemoveRows();
+
+        if(removeLastSeenHeader)
+        {
+            beginRemoveRows(parent, k, k);
+            const int kIndex = viewIndexes[ k ];
+            items.removeAt( kIndex );
+            viewIndexes.removeAt(k);
+            for(int lp = 0; lp < viewIndexes.size(); lp++)
+            {
+                if(viewIndexes[lp] > kIndex)
+                    viewIndexes[lp] = viewIndexes[lp] - 1;
+            }
+
+            for (int lc = 0; lc < items.size(); ++lc)
+                if(items.at(lc).parentIndex > k)
+                    --(items[lc].parentIndex);
+
+            ++r;
+            endRemoveRows();
+        }
+    }
+}
+
+void DActionsListModel::commitMarkings()
+{
+    for(auto const& i : items)
+    {
+        if(i.isDeleteChecked)
+            recommender.setWeights(i.property.getFilePath(), std::string());
+        else if(i.isKeepChecked)
+            recommender.setWeights(std::string(), i.property.getFilePath());
+    }
 }

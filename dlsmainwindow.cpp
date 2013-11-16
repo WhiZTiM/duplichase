@@ -25,6 +25,7 @@ DLSMainWindow::DLSMainWindow(QWidget *parent) :
     ui->dupScanParameterFrame->setLayout( new QHBoxLayout );
     setupMainWindowElements();
     setWindowIcon(QIcon(":/main/mainIcon"));
+#ifdef Q_OS_LINUXd
     QFile file(":/stylesheet/mainStyle");
     if(file.isOpen())
     {
@@ -36,6 +37,7 @@ DLSMainWindow::DLSMainWindow(QWidget *parent) :
                 "background-image: url(\":/images/bg01\");"
                 "background-repeat: repeat-xy;"
                 "}");
+#endif
 }
 
 void DLSMainWindow::setupMainWindowElements()
