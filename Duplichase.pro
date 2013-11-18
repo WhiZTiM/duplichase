@@ -43,7 +43,8 @@ SOURCES += \
     dupscan/useful_qt_functions.cpp \
     dupscan/useful_functions.cpp \
     dupscan/modelview/dactionslistview.cpp \
-    dupscan/modelview/extrafileproperty.cpp
+    dupscan/modelview/extrafileproperty.cpp \
+    dupscan/safe_deletion.cpp
 
 HEADERS  += \
 	backend/include/container_helpers/fp_holders.hpp \
@@ -81,7 +82,9 @@ HEADERS  += \
     dupscan/logformatter.hpp \
     dupscan/modelview/dactionslistview.hpp \
     test/fileproperty/sample_fileProperty.hpp \
-    dupscan/modelview/extrafileproperty.hpp
+    dupscan/modelview/extrafileproperty.hpp \
+    dupscan/safe_deletion.hpp \
+    dglobals.hpp
 
 #FORMS    += \
 #    UI/mainwindow.ui \

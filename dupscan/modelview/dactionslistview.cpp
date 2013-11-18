@@ -8,6 +8,7 @@
 #include <QPainter>
 #include <QFileInfo>
 #include <QKeyEvent>
+#include <QMessageBox>
 #include <QStaticText>
 #include <QMouseEvent>
 #include <QPushButton>
@@ -105,6 +106,18 @@ void DActionsListView::action_markForDelete()
 
 void DActionsListView::action_deletFileNow()
 {
+    int w1 = QMessageBox::warning( this, tr("Deletion:: 1st WARNING"),
+                                   tr("<qt><b>1st WARNING! </b></qt>Are you sure you want to delete the selected File(s)??"),
+                                   QMessageBox::Yes | QMessageBox::No
+                                   );
+    if(w1 != QMessageBox::Yes)
+        return;
+    w1 = QMessageBox::critical( this, tr("Deletion:: FINAL WARNING!"),
+                                tr("<qt><b>FINAL WARNING!  </b></qt>Are you REALLY sure you want to delete the selected File(s)??"),
+                                QMessageBox::Yes | QMessageBox::No
+                                );
+    if(w1 != QMessageBox::Yes)
+            return;
     //! We do not want the user to accidentally delete somefiles outside the view
     emit deleteFileNow(selectedIndexes());
 }
@@ -206,145 +219,8 @@ void DActionsListView::keyPressEvent(QKeyEvent *event)
 DActionsListDelegate::DActionsListDelegate(QWidget *parent) :
     QStyledItemDelegate(parent)
 {
-    openDirectoryAction = contextMenu.addAction("&Open Directory", this, SLOT(action_openDirectory()));
-    openFileAction      = contextMenu.addAction("Open &File", this, SLOT(action_openFile()));
-    contextMenu.addSeparator();
-    keepAction          = contextMenu.addAction("Mark for keep", this, SLOT(action_markForKeep()));
-    deleteAction        = contextMenu.addAction("Mark for Deletion", this, SLOT(action_markForDelete()));
-    contextMenu.addSeparator();
-    deleteNowAction     = contextMenu.addAction("Delete Now", this, SLOT(action_deletFileNow()));
-
-    openDirectoryAction->setToolTip(tr("Opens The directory where this file is contained"));
-    openFileAction->setToolTip(tr("Opens the File with default Application"));
-    deleteNowAction->setToolTip("Deletes the File Now");
-    keepAction->setCheckable(true);
-    deleteAction->setCheckable(true);
+    //
 }
-
-void DActionsListDelegate::action_openFile()
-{
-    DItem item = currentIndex.data().value<DItem>();
-    if(item.isGroupHeader)
-        return;
-    QString fname(QString::fromStdString( item.property.getFilePath() ));
-    QDesktopServices::openUrl( QUrl::fromLocalFile( fname ) );
-}
-
-void DActionsListDelegate::action_openDirectory()
-{
-    DItem item = currentIndex.data().value<DItem>();
-    if(item.isGroupHeader)
-        return;
-
-    QString fname( parent_of_generic_path( item.property.getFilePath() ));
-    QDesktopServices::openUrl( QUrl::fromLocalFile( fname ) );
-}
-
-void DActionsListDelegate::action_markForKeep()
-{
-    if(keepAction->isChecked())
-        emit unmarkForKeep(currentIndex);
-    else
-        emit markForKeep(currentIndex);
-}
-
-void DActionsListDelegate::action_markForDelete()
-{
-    if(deleteAction->isChecked())
-        emit unmarkForDelete(currentIndex);
-    else
-        emit markForDelete(currentIndex);
-}
-
-void DActionsListDelegate::action_deletFileNow()
-{
-    emit deleteFileNow(currentIndex);
-}
-
-void DActionsListDelegate::prepareContextMenu()
-{
-    DItem item = currentIndex.data().value<DItem>();
-    if(item.isGroupHeader)
-    {
-        keepAction->setDisabled(true);
-        deleteAction->setDisabled(true);
-        deleteNowAction->setDisabled(true);
-        openFileAction->setDisabled(true);
-        openDirectoryAction->setDisabled(true);
-    }
-
-    keepAction->setEnabled(true);
-    deleteAction->setEnabled(true);
-    deleteNowAction->setEnabled(true);
-    openFileAction->setEnabled(true);
-    openDirectoryAction->setEnabled(true);
-    if(item.isDeleteChecked)
-    {
-        deleteAction->setChecked(true);
-        deleteAction->setText(tr("Unmark for Deletion"));
-        deleteAction->setToolTip(tr("Unmarks this file for Deletion"));
-    }
-    else
-    {
-        deleteAction->setChecked(false);
-        deleteAction->setText(tr("Mark for Deletion"));
-        deleteAction->setToolTip(tr("Marks this file for Deletion"));
-    }
-    if(item.isKeepChecked)
-    {
-        keepAction->setChecked(true);
-        keepAction->setText(tr("Unmark for Keep"));
-        keepAction->setToolTip(tr("Unmarks this file from Keepers"));
-    }
-    else
-    {
-        keepAction->setChecked(false);
-        keepAction->setText(tr("Mark for Keep"));
-        keepAction->setToolTip(tr("Unmarks this file from Keepers"));
-    }
-}
-
-/*
-bool DActionsListDelegate::editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index)
-{
-    Q_UNUSED(model)
-    Q_UNUSED(option)
-    if(event->type() == QEvent::MouseButtonPress)
-    {
-        //
-        std::cerr << "\nAccepted Mouse Release" << std::endl;
-        QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
-
-        if(mouseEvent->button() == Qt::RightButton)
-        {
-            QRect rect(mouseEvent->globalPos(), contextMenu.sizeHint());
-            contextMenu.setGeometry( rect );
-            currentIndex = index;
-            prepareContextMenu();
-            contextMenu.show();
-        }
-    }
-    if(event->type() == QEvent::MouseMove)
-    {
-        if(QToolTip::isVisible())
-            return false;
-        QString data = index.data(Qt::ToolTipRole).toString();
-        QToolTip::showText(QCursor::pos(), data);
-        return true;
-    }
-    if(event->type() == QEvent::KeyPress || event->type() == QEvent::KeyRelease)
-    {
-        std::cerr << "KEY Pressed " << std::endl;
-    }
-#if 0
-    if(event->type() == QEvent::ContextMenu)
-    {
-        std::cerr << "ContextMenu" << std::endl;
-    }
-#endif
-    return false;
-}
-*/
 
 void DActionsListDelegate::paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const
 {
@@ -507,10 +383,13 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     filter_pushButton               = new QPushButton("&Filter", this);
     sort_pushButton                 = new QPushButton("&Sort", this);
     reset_pushButton                = new QPushButton("&Reset", this);
-    autoSelectKeep_pushButton       = new QPushButton("AutoSelect &Keep", this);
-    autoSelectDelete_pushButton     = new QPushButton("AutoSelect &Deletion", this);
+    markings_pushButton             = new QPushButton("Markings", this);
+    autoSelection_pushButton        = new QPushButton("&Auto Selection", this);
     commit_pushButton               = new QPushButton("&Commit", this);
+
     sort_pushButton->setCheckable(true);
+    markings_pushButton->setCheckable(true);
+    autoSelection_pushButton->setCheckable(true);
 
     QFrame* line = new QFrame(this);
     line->setFrameShape(QFrame::HLine);
@@ -523,26 +402,35 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     mainLayout->addWidget(filter_pushButton);
     mainLayout->addWidget(sort_pushButton);
     mainLayout->addWidget(reset_pushButton);
-    mainLayout->addWidget(autoSelectKeep_pushButton);
-    mainLayout->addWidget(autoSelectDelete_pushButton);
     mainLayout->addWidget(line2);
+    mainLayout->addWidget(autoSelection_pushButton);
+    mainLayout->addWidget(markings_pushButton);
     mainLayout->addStretch();
 
     sortContextMenu.addAction("&Descending Order of File size", this, SLOT(sortByDescendingFileSize()));
     sortContextMenu.addAction("&Ascending Order of File size", this, SLOT(sortByAscendingFileSize()));
 
-    connect(sort_pushButton, SIGNAL(clicked()), this, SLOT(processSortRequest()));
+    autoSelectionContextMenu.addAction("Auto Select Next &Possibilities", this, SIGNAL(autoSelectNextPossibilities()));
+    autoSelectionContextMenu.addAction("Auto Select Next &Keeps", this, SIGNAL(autoSelectNextKeeps()));
+    autoSelectionContextMenu.addAction("Auto Select Next &Deletes", this, SIGNAL(autoSelectNextDeletes()));
+
+    markingsContextMenu.addAction("Unmark &All", this, SIGNAL(unmarkAll()));
+    markingsContextMenu.addAction("Unmark All &Keeps", this, SIGNAL(unmarkAllKeeps()));
+    markingsContextMenu.addAction("Unmark all &Deletes", this, SIGNAL(unmarkAllDeletes()));
+
     connect(filter_pushButton, SIGNAL(clicked()), this, SIGNAL(filteringRequested()));
     connect(reset_pushButton, SIGNAL(clicked()), this, SIGNAL(resetRequested()));
-    connect(&sortContextMenu, SIGNAL(aboutToHide()), this, SLOT(sortContextMenuAboutToHide()));
-}
+    connect(commit_pushButton, SIGNAL(clicked()), this, SIGNAL(commitRequested()));
 
-void ActionsButtonPanel::processSortRequest()
-{
-    sortContextMenu.setGeometry( QRect( QCursor::pos(), sortContextMenu.sizeHint() ) );
-    sort_pushButton->setChecked(true);
-    sortContextMenu.show();
-    sortContextMenu.exec();
+    connect(sort_pushButton, SIGNAL(clicked()), this, SLOT(processSortRequest()));
+    connect(autoSelection_pushButton, SIGNAL(clicked()), this, SLOT(processAutoSelectionClicked()));
+    connect(markings_pushButton, SIGNAL(clicked()), this, SLOT(processMarkingsClicked()));
+
+    connect(&sortContextMenu, SIGNAL(aboutToHide()), this, SLOT(sortContextMenuAboutToHide()));
+    connect(&autoSelectionContextMenu, SIGNAL(aboutToHide()), this,
+            SLOT(autoSelectionContextMenuAboutToHide()));
+    connect(&markingsContextMenu, SIGNAL(aboutToHide()), this,
+            SLOT(markingsContextMenuAboutToHide()));
 }
 
 void ActionsButtonPanel::sortByDescendingFileSize()
@@ -555,7 +443,35 @@ void ActionsButtonPanel::sortByAscendingFileSize()
     sortingRequested(Qt::AscendingOrder);
 }
 
+void ActionsButtonPanel::processSortRequest()
+{
+    sort_pushButton->setChecked(true);
+    sortContextMenu.exec( QCursor::pos() );
+}
+
+void ActionsButtonPanel::processAutoSelectionClicked()
+{
+    autoSelection_pushButton->setChecked(true);
+    autoSelectionContextMenu.exec(QCursor::pos());
+}
+
+void ActionsButtonPanel::processMarkingsClicked()
+{
+    markings_pushButton->setChecked(true);
+    markingsContextMenu.exec(QCursor::pos());
+}
+
 void ActionsButtonPanel::sortContextMenuAboutToHide()
 {
     sort_pushButton->setChecked(false);
+}
+
+void ActionsButtonPanel::autoSelectionContextMenuAboutToHide()
+{
+    autoSelection_pushButton->setChecked(false);
+}
+
+void ActionsButtonPanel::markingsContextMenuAboutToHide()
+{
+    markings_pushButton->setChecked(false);
 }

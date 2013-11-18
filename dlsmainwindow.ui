@@ -560,6 +560,15 @@
    </property>
   </action>
   <action name="action_DupLichaSe_DUPScan">
+   <property name="checkable">
+    <bool>true</bool>
+   </property>
+   <property name="checked">
+    <bool>true</bool>
+   </property>
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;DupLichaSe DUPScan</string>
    </property>

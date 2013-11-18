@@ -370,7 +370,7 @@ void DuplicateFinderAggregator::makeRuleBag()
         RuleSequence<Path, FileProperty> rules;
 
         //! 0 bytes to 1KB
-        V_RF.push_back( new FR_by_size(0, 1023, rule_option::Dismiss) );
+        V_RF.push_back( new FR_by_size(0, 2047, rule_option::Dismiss) );
         rules.AddRule(V_RF.back());
 
         V_RF.push_back( new FR_by_hashA(100) );
@@ -384,7 +384,7 @@ void DuplicateFinderAggregator::makeRuleBag()
 
 
         //! 1KB to 50KB
-        V_RF.push_back( new FR_by_size(1024, 51199UL) );
+        V_RF.push_back( new FR_by_size(2048, 51199UL) );
         rules.AddRule(V_RF.back());
 
         V_RF.push_back( new FR_by_hashA(100) );

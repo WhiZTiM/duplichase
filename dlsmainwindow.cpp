@@ -4,6 +4,7 @@
 #include <QStackedLayout>
 #include "dlsmainwindow.hpp"
 #include "ui_dlsmainwindow.h"
+#include "dglobals.hpp"
 #include "dupscan/dialogs/aboutdialog.hpp"
 #include "dupscan/dupscansetupwidget.hpp"
 #include "dupscan/dupscanfindwidget.hpp"
@@ -42,7 +43,7 @@ DLSMainWindow::DLSMainWindow(QWidget *parent) :
 
 void DLSMainWindow::setupMainWindowElements()
 {
-    setWindowTitle(tr("DupLichaSe 2013 --version 0.01 Alpha"));
+    setWindowTitle(tr("DupLichaSe 2013 --version ") + QString(PROGRAM_VERSION_FULL_STRING));
     ui->msgInfoTextBrowser->setReadOnly(true);
     //ui->msgInfoTextBrowser->set
 
@@ -68,7 +69,10 @@ void DLSMainWindow::setupMainWindowElements()
     connect(ui->scanSpeedHorizontalSlider, SIGNAL(valueChanged(int)), dpFindWidget, SLOT(setScanSpeed(int)));
     connect(dpSetupWidget, SIGNAL(statusMessage(QString)), this, SLOT(writeToStatusBar7(QString)) );
     connect(dpFindWidget, SIGNAL(scanProgress(int)), ui->progressBarFinite, SLOT(setValue(int)));
+
     connect(dpFindWidget, SIGNAL(logMessage(QString)), this, SLOT(writeToLogger(QString)));
+    connect(dpActionWidget, SIGNAL(logMessage(QString)), this, SLOT(writeToLogger(QString)));
+
     connect(dpFindWidget, SIGNAL(finishedScanning(bool)), this, SLOT(processFinishedScanning(bool)));
     connect(ui->progressSuspendPushButton, SIGNAL(clicked()), this, SLOT(processStart_Suspend()));
     connect(ui->progressStopPushButton, SIGNAL(clicked()), this, SLOT(StopScanner()));

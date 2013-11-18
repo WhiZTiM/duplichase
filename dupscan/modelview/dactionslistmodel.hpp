@@ -34,6 +34,10 @@ public slots:
     void deselectForDeletion(QModelIndexList indexes);
     void deselectForKeep(QModelIndexList indexes);
     void deleteFilesNow(QModelIndexList indexes);
+
+    void unmarkAllKeeps();
+    void unmarkAllDeletes();
+    void unmarkAll();
     /*! TODO!!!
     void filterModelByPath(const QString& parentPath );
     void filterModelBySize(ulong min, ulong max);
@@ -48,6 +52,7 @@ private:
     ExtraPropertyHandler extraPropertyHandle;
 
     void prepareModel();
+    QString formartForLog(const QString& str);
 };
 
 #endif // DACTIONSLISTMODEL_HPP

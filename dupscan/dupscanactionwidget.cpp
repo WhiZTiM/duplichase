@@ -32,7 +32,14 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     connect(view, SIGNAL(deleteFileNow(QModelIndexList)), model, SLOT(deleteFilesNow(QModelIndexList)));
 
     connect(actionsButton, SIGNAL(sortingRequested(Qt::SortOrder)), model, SLOT(sortModel(Qt::SortOrder)));
+    connect(actionsButton, SIGNAL(commitRequested()), model, SLOT(commitMarkings()));
     connect(actionsButton, SIGNAL(resetRequested()), model, SLOT(resetViewItems()));
+
+    connect(model, SIGNAL(logMessage(QString)), this, SIGNAL(logMessage(QString)));
+
+    connect(actionsButton, SIGNAL(unmarkAllKeeps()), model, SLOT(unmarkAllKeeps()));
+    connect(actionsButton, SIGNAL(unmarkAllDeletes()), model, SLOT(unmarkAllDeletes()));
+    connect(actionsButton, SIGNAL(unmarkAll()), model, SLOT(unmarkAll()));
 
     model->setDuplicates( sampleDuplicateContainer() );
 

@@ -27,6 +27,7 @@ public:
     QWidget *actionsButtonPanel() const;
 
 signals:
+    void logMessage(QString);
 
 public slots:
     void setDuplicates(DLS::DuplicatesContainer duplicates);

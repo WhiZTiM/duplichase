@@ -1,10 +1,12 @@
 #include "dactionslistmodel.hpp"
+#include "dupscan/safe_deletion.hpp"
 #include <QStringList>
 #include <QVector>
 #include <QPair>
 #include <QFile>
 Q_DECLARE_METATYPE(DLS::FileProperty)
 Q_DECLARE_METATYPE(DItem)
+
 
 DActionsListModel::DActionsListModel(QObject *parent) :
     QAbstractListModel(parent)
@@ -256,13 +258,25 @@ void DActionsListModel::deleteFilesNow(QModelIndexList indexes)
         const int k = items.at( vIndex ).parentIndex;
         items[k].header.itemCount( items.at(k).header.itemCount() - 1 );
 
-        Q_ASSERT_X(k < index, "Deletion: Parent check", "This is a BUG!!!");
         Q_ASSERT_X(k < vIndex, "Deletion: Parent check", "This is a BADDD BUG!!!");
         bool removeLastSeenHeader = (items.at(k).header.itemCount() < 1) ? true : false;
 
         recommender.setWeights( items.at(vIndex).property.getFilePath() , std::string() );
+        QString filePath(QString::fromStdString( items.at(vIndex).property.getFilePath() ));
         items.removeAt( vIndex );
         viewIndexes.removeAt(index);
+
+        QString deletionReply = DeletionAgent::toTrash( filePath );
+        if(!deletionReply.isEmpty())
+        {
+            QString ddkk("The File \"" + filePath + "\" " + deletionReply);
+            emit logMessage( formartForLog( ddkk ) );
+        }
+        else
+        {
+            QString ddkk("The File \"" + filePath + "\" was SUCSESSFULLY deleted");
+            emit logMessage( formartForLog( ddkk ) );
+        }
 
         for(int lp = 0; lp < viewIndexes.size(); lp++)
         {
@@ -299,6 +313,7 @@ void DActionsListModel::deleteFilesNow(QModelIndexList indexes)
 
 void DActionsListModel::commitMarkings()
 {
+    beginResetModel();
     for(auto const& i : items)
     {
         if(i.isDeleteChecked)
@@ -306,4 +321,37 @@ void DActionsListModel::commitMarkings()
         else if(i.isKeepChecked)
             recommender.setWeights(std::string(), i.property.getFilePath());
     }
+    endResetModel();
+}
+
+void DActionsListModel::unmarkAllKeeps()
+{
+    beginResetModel();
+    for(auto& k : items)
+        k.isKeepChecked = false;
+    endResetModel();
+}
+
+void DActionsListModel::unmarkAllDeletes()
+{
+    beginResetModel();
+    for(auto& k : items)
+        k.isDeleteChecked = false;
+    endResetModel();
+}
+
+void DActionsListModel::unmarkAll()
+{
+    beginResetModel();
+    for(auto& k : items)
+    {
+        k.isKeepChecked = false;
+        k.isDeleteChecked = false;
+    }
+    endResetModel();
+}
+
+QString DActionsListModel::formartForLog(const QString &str)
+{
+    return "<font color='#4389A4'>><b>DupscanGUIModel: -</b></font>" + str;
 }

@@ -25,31 +25,10 @@ public:
 
 signals:
     void groupHeaderSelected(QModelIndex) const;
-    void deleteFileNow(QModelIndex);
-    void markForKeep(QModelIndex);
-    void markForDelete(QModelIndex);
-    void unmarkForKeep(QModelIndex);
-    void unmarkForDelete(QModelIndex);
-
-public slots:
-    void action_openFile();
-    void action_openDirectory();
-    void action_deletFileNow();
-    void action_markForKeep();
-    void action_markForDelete();
 
 private:
     QString _name;
     QString _size;
-    QMenu contextMenu;
-    QModelIndex currentIndex;
-
-    QAction* keepAction;
-    QAction* deleteAction;
-    QAction* deleteNowAction;
-    QAction* openFileAction;
-    QAction* openDirectoryAction;
-    void prepareContextMenu();
 };
 
 class DActionsListView : public QListView
@@ -100,21 +79,37 @@ signals:
     void sortingRequested(Qt::SortOrder);
     void filteringRequested();
     void resetRequested();
+    void commitRequested();
+    void unmarkAllKeeps();
+    void unmarkAllDeletes();
+    void unmarkAll();
+    void autoSelectNextKeeps();
+    void autoSelectNextDeletes();
+    void autoSelectNextPossibilities();
 public slots:
 
 private slots:
-    void processSortRequest();
     void sortByDescendingFileSize();
     void sortByAscendingFileSize();
+
+    void processSortRequest();
+    void processMarkingsClicked();
+    void processAutoSelectionClicked();
+
     void sortContextMenuAboutToHide();
+    void autoSelectionContextMenuAboutToHide();
+    void markingsContextMenuAboutToHide();
+
 private:
-    QPushButton* autoSelectKeep_pushButton;
-    QPushButton* autoSelectDelete_pushButton;
+    QPushButton* autoSelection_pushButton;
+    QPushButton* markings_pushButton;
     QPushButton* reset_pushButton;
     QPushButton* sort_pushButton;
     QPushButton* filter_pushButton;
     QPushButton* commit_pushButton;
     QMenu sortContextMenu;
+    QMenu autoSelectionContextMenu;
+    QMenu markingsContextMenu;
 };
 
 #endif // DACTIONSLISTVIEW_HPP

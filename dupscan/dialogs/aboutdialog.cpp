@@ -1,6 +1,7 @@
 #include "aboutdialog.hpp"
 #include "ui_aboutdialog.h"
 #include <QMessageBox>
+#include "dglobals.hpp"
 
 AboutDialog::AboutDialog(QWidget *parent) :
     QDialog(parent),
@@ -10,6 +11,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
     setAboutQtText();
     //setWindowFlags();
     ui->tabWidget->setCurrentIndex(0);  //Always
+    ui->programVersionTextLabel->setText( QString("version: ") + PROGRAM_VERSION_FULL_STRING );
     ui->about_briefLabel->setOpenExternalLinks(true);
 }
 
