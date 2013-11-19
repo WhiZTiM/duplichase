@@ -269,7 +269,7 @@ void DActionsListModel::deleteFilesNow(QModelIndexList indexes)
         QString deletionReply = DeletionAgent::toTrash( filePath );
         if(!deletionReply.isEmpty())
         {
-            QString ddkk("The File \"" + filePath + "\" " + deletionReply);
+            QString ddkk("Problem With \"" + filePath + "\" " + deletionReply);
             emit logMessage( formartForLog( ddkk ) );
         }
         else

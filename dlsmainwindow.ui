@@ -540,16 +540,25 @@
    </property>
   </action>
   <action name="action_Open_DupLichaSe_File">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Open DupLichaSe File</string>
    </property>
   </action>
   <action name="action_Save_DupLichaSe_File">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Save DupLichaSe File</string>
    </property>
   </action>
   <action name="action_Preferences">
+   <property name="enabled">
+    <bool>false</bool>
+   </property>
    <property name="text">
     <string>&amp;Preferences</string>
    </property>

@@ -49,6 +49,7 @@ private:
     DLS::PathRecommender recommender;
     QList<int> viewIndexes;
     QList<DItem> items;
+    QList<QList<DItem>::iterator> viewIt;
     ExtraPropertyHandler extraPropertyHandle;
 
     void prepareModel();

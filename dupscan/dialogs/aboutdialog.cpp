@@ -2,6 +2,8 @@
 #include "ui_aboutdialog.h"
 #include <QMessageBox>
 #include "dglobals.hpp"
+#include <QScrollBar>
+#include <QDebug>
 
 AboutDialog::AboutDialog(QWidget *parent) :
     QDialog(parent),
@@ -58,8 +60,14 @@ void AboutDialog::setAboutQtText()
             "for more information.</p>"
             ;
     aboutQtStolenString = translatedTextAboutQtCaption + bodyDetail;
-    QLabel* label = new QLabel(ui->aboutQtScrollArea);
-    label->setTextFormat(Qt::RichText);
-    label->setWordWrap(true);
-    label->setText(aboutQtStolenString);
+    //QLabel* label = new QLabel(ui->aboutQtScrollArea);
+    //label->setTextFormat(Qt::RichText);
+    //label->setWordWrap(true);
+    //label->setText(aboutQtStolenString);
+    //qDebug() << "ScrollBar:  " << label->sizeHint() << endl;
+    ui->aboutQtScrollArea->setLayout(new QVBoxLayout);
+    QTextEdit* txt = new QTextEdit( aboutQtStolenString, this);
+    txt->setWordWrapMode(QTextOption::WordWrap);
+    txt->setReadOnly(true);
+    ui->aboutQtScrollArea->setWidget(txt);
 }
