@@ -18,8 +18,6 @@ public:
     QString fileNameAsString(const QString& name) const;
     QString fileNameAsString(const std::string& name) const;
     QString fileSizeAsString(const ulong size) const;
-    //bool eventFilter(QObject *object, QEvent *event);
-   // bool editorEvent(QEvent *event, QAbstractItemModel *model, const QStyleOptionViewItem &option, const QModelIndex &index);
     void paint(QPainter *painter, const QStyleOptionViewItem &option, const QModelIndex &index) const override;
     QSize sizeHint(const QStyleOptionViewItem &option, const QModelIndex &index) const override;
 
@@ -77,7 +75,7 @@ public:
 
 signals:
     void sortingRequested(Qt::SortOrder);
-    void filteringRequested();
+    void filteringRequested(QStringList);
     void resetRequested();
     void commitRequested();
     void unmarkAllKeeps();
@@ -95,10 +93,12 @@ private slots:
     void processSortRequest();
     void processMarkingsClicked();
     void processAutoSelectionClicked();
+    void filterContextMenuClicked();
 
     void sortContextMenuAboutToHide();
     void autoSelectionContextMenuAboutToHide();
     void markingsContextMenuAboutToHide();
+    void filterContextMenuAboutToHide();
 
 private:
     QPushButton* autoSelection_pushButton;
@@ -110,6 +110,10 @@ private:
     QMenu sortContextMenu;
     QMenu autoSelectionContextMenu;
     QMenu markingsContextMenu;
+    QMenu filterContextMenu;
+    //QMenu filterByExtensionContextMenu;
+    //QMenu filterBySizeContextMenu;
+    //QList<QAction*> filterExtensionMenus;
 };
 
 #endif // DACTIONSLISTVIEW_HPP

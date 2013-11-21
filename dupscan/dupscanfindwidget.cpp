@@ -502,7 +502,7 @@ void FileViewDelegate::paint(QPainter *painter, const QStyleOptionViewItem &opti
     if(name.isEmpty())
         return;
 
-    QFontMetrics metrics(option.font);
+    const QFontMetrics& metrics = option.fontMetrics;
     QRect rect_major = option.rect;
     rect_major.translate( 3, 3 );
     //Need to trim... but hey!, translation alone serves us for now...
@@ -557,12 +557,20 @@ QString FileViewDelegate::fileSizeAsString(const ulong size) const
 
 QString FileViewDelegate::fileNameAsString(const std::string &name) const
 {
+#ifdef Q_OS_WIN32
+    return QString::fromStdString(boost::filesystem::path(name).string());
+#else
     return QString::fromStdString(boost::filesystem::path(name).native());
+#endif
 }
 
 QString FileViewDelegate::fileNameAsString(const QString &name) const
 {
+#ifdef Q_OS_WIN32
+    return QString::fromStdString(boost::filesystem::path(name.toStdString()).string());
+#else
     return QString::fromStdString(boost::filesystem::path(name.toStdString()).native());
+#endif
 }
 
 

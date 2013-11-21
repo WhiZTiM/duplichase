@@ -4,9 +4,12 @@
 #include <QVector>
 #include <QPair>
 #include <QFile>
+#include <iostream>
+
 Q_DECLARE_METATYPE(DLS::FileProperty)
 Q_DECLARE_METATYPE(DItem)
 
+//#define OLD_MODEL
 
 DActionsListModel::DActionsListModel(QObject *parent) :
     QAbstractListModel(parent)
@@ -18,24 +21,32 @@ DActionsListModel::DActionsListModel(QObject *parent) :
 void DActionsListModel::setDuplicates(DLS::DuplicatesContainer container)
 {
     duplicates = container;
+    freshPreparation = true;
     prepareModel();
 }
 
 void DActionsListModel::resetViewItems()
 {
     beginResetModel();
+    #ifdef OLD_MODEL
     viewIndexes.clear();
     for(int i=0; i < items.size(); i++)
     {
         viewIndexes.push_back( i );
     }
+    #endif
+
+    freshPreparation = false;
+    prepareModel();
     endResetModel();
 }
 
 void DActionsListModel::filterModelByExtension(const QStringList &extensionList)
 {
-    QList<int> filteredList;
+    beginResetModel();
     bool last_iteration_was_group_header = false;
+    #ifdef OLD_MODEL
+    QList<int> filteredList;
     for(int i=0; i < viewIndexes.size(); i++)
     {
         if(items[ viewIndexes[i] ].isGroupHeader)
@@ -51,19 +62,45 @@ void DActionsListModel::filterModelByExtension(const QStringList &extensionList)
             if( extensionList.contains( extension, Qt::CaseInsensitive) )
             {
                 filteredList.append( viewIndexes[i] );
+                last_iteration_was_group_header = false;
             }
-            last_iteration_was_group_header = false;
         }
     }
 
     filteredList.swap( viewIndexes );
+    #endif
+
+    QList<iData> filteredViewIt;
+    last_iteration_was_group_header = false;
+    for(int i = 0; i < viewIt.size(); i++)
+    {
+
+        if(viewIt[i].item->isGroupHeader)
+        {
+            if(last_iteration_was_group_header)
+                filteredViewIt.removeLast();
+            filteredViewIt.push_back(viewIt[i]);
+            last_iteration_was_group_header = true;
+        }
+        else
+        {
+            QString extension(QString::fromStdString( viewIt[i].item->property.getFileExtension() ));
+            if( extensionList.contains(extension, Qt::CaseInsensitive) )
+            {
+                filteredViewIt.push_back( viewIt[i] );
+                last_iteration_was_group_header = false;
+            }
+        }
+    }
+
+    endResetModel();
 }
 
 /// THis function exposes the poor design and loose cohesion of this Software. Runs at O(2n + nlogn) worst case
 void DActionsListModel::sortModel(Qt::SortOrder sortOrder)
 {
     beginResetModel();
-
+    #ifdef OLD_MODEL
     //Run a linear scan to select the headers in viewItems. also taking note of their positions
     QVector< int > headers;
     for(int i=0; i < viewIndexes.size(); i++)
@@ -100,16 +137,58 @@ void DActionsListModel::sortModel(Qt::SortOrder sortOrder)
         }
     }
     sortedItems.swap( viewIndexes );
+    #endif
 
+    QList< QPair<iData, int> > Headers;
+    for(int k = 0; k < viewIt.size(); k++)
+        if( viewIt[k].item == viewIt[k].header )    //its a header... we can also use //if(k.item->isGroupHeader)
+            Headers.push_back( qMakePair(viewIt[k], k) );
+
+    auto ascSort = [](const QPair<iData, int>& lhs, const QPair<iData, int>& rhs)
+    {
+        return lhs.first.item->header.value() < rhs.first.item->header.value();
+    };
+
+    auto dscSort = [](const QPair<iData, int>& lhs, const QPair<iData, int>& rhs)
+    {
+        return lhs.first.item->header.value() > rhs.first.item->header.value();
+    };
+
+    if(sortOrder == Qt::AscendingOrder)
+        qSort(Headers.begin(), Headers.end(), ascSort);
+    else
+        qSort(Headers.begin(), Headers.end(), dscSort);
+
+    QList<iData> sortedViewIt;
+    for (int k = 0; k < Headers.size(); k++)
+    {
+        sortedViewIt.push_back( Headers[k].first );
+        int m = Headers[k].second;
+        auto iHeader = Headers[k].first.header;
+        auto mChild  = viewIt[++m];
+        while(mChild.header == iHeader )
+        {
+            sortedViewIt.push_back( mChild );
+            if(++m >= viewIt.size())
+                break;
+            mChild = viewIt[m];
+        }
+    }
+    sortedViewIt.swap( viewIt );
     endResetModel();
 }
 
 int DActionsListModel::rowCount(const QModelIndex &parent) const
 {
     Q_UNUSED(parent)
+
+    #ifdef OLD_MODEL
     //if(!parent.isValid())    //toplevel
     //    return duplicates.size();
     return viewIndexes.size();
+    #else
+    return viewIt.size();
+    #endif
 }
 
 
@@ -118,20 +197,30 @@ void DActionsListModel::prepareModel()
 {
     //Assing unique numbers and headers
     beginResetModel();
-
-    std::vector<DLS::ptrVEC_FileProperty> vec_duplicates;
     auto cmp_ptrVEC_FileProperty =
             [](const DLS::ptrVEC_FileProperty& lhs, const DLS::ptrVEC_FileProperty& rhs) -> bool
     {
         return lhs->back().getSize() > rhs->back().getSize();
     };
 
-    for(auto i : duplicates)
-        vec_duplicates.push_back(i);
-    std::sort(vec_duplicates.begin(), vec_duplicates.end(), cmp_ptrVEC_FileProperty);
+    if(freshPreparation)
+    {
+        vec_duplicates.clear();
+        for(auto i : duplicates)
+            vec_duplicates.push_back(i);
+        std::sort(vec_duplicates.begin(), vec_duplicates.end(), cmp_ptrVEC_FileProperty);
+    }
 
+    #ifdef OLD_MODEL
     items.clear();
     viewIndexes.clear();
+    #endif
+
+    //!NEWW
+    dItems.clear();
+    viewIt.clear();
+    QLinkedList<DItem>::iterator pLast = dItems.begin();
+
     int i = 1, t_counter = 0, headerIndex = 0;
     for(auto& item : vec_duplicates)
     {
@@ -140,11 +229,22 @@ void DActionsListModel::prepareModel()
         itm.keepingWeight = 0;
         itm.isGroupHeader = true;
         itm.header.topString("Category <<( " + QString::number(i) + " )>>");
+        #ifdef OLD_MODEL
         items.push_back(itm);
-
         headerIndex = t_counter;
         viewIndexes.push_back( t_counter++ );
         DItem& itmHeader_ref = items.back();    //!KEEP
+        #endif
+
+        //!NEWW
+        //pLast = dItems.insert(pLast, itm );
+        dItems.push_back(itm);  pLast = dItems.end() - 1;
+        iData kItem;
+        kItem.header = pLast;
+        kItem.item = pLast;
+        viewIt.push_back( kItem );
+        DItem& itmHeader_reference = dItems.back();                 //! REMOVE
+        auto itmHeader_iter = pLast;
 
         // Clear data for reuse in the for loop below
         itm.header.topString("");
@@ -158,17 +258,40 @@ void DActionsListModel::prepareModel()
             property.setTag(i);
             itm.property = property;
             itm.parentIndex = headerIndex;
+            #ifdef OLD_MODEL
             items.push_back(itm);
             viewIndexes.push_back( t_counter++ );
+            #endif
+
+            //!NEWW
+            //pLast = dItems.insert(pLast, itm);
+            dItems.push_back(itm);  pLast = dItems.end() - 1;
+            kItem.item = pLast;
+            viewIt.push_back( kItem );
+
             ++itemCount;
             Set_header_size = true;
         }
-        itmHeader_ref.header.itemCount( itemCount );    //!KEEP
+        #ifdef OLD_MODEL
+        itmHeader_ref.header.itemCount( itemCount );
+        #endif
+
+        //!NEWW
+        itmHeader_reference.header.itemCount( itemCount );
+        std::cerr << "Header Count Original: " << itmHeader_reference.header.itemCount() << std::endl;
+        std::cerr << "Header Count Iterator: " << itmHeader_iter->header.itemCount() << std::endl;
+        std::cerr << "Header Count LastIter: " << (dItems.end() - 1)->header.itemCount() << std::endl;
+        std::cerr << "Back() @: " << &(dItems.back()) << "  Address of pLast @:" << &(*pLast) << std::endl;
 
         //sets the group size as from the last element in the loop
         if(Set_header_size)
         {
+            #ifdef OLD_MODEL
             itmHeader_ref.header.value( items.back().property.getSize() );  //!KEEP
+            #endif
+
+            //! NEWW
+            itmHeader_reference.header.value( dItems.back().property.getSize() );   //!REMOVE!!
         }
 
         ++i;
@@ -178,10 +301,17 @@ void DActionsListModel::prepareModel()
 
 QVariant DActionsListModel::data(const QModelIndex &index, int role) const
 {
-    //if(index.row() >= viewIndexes.size())
-    //    return QVariant();        --- - - > REPLACED WITH AN ASSERTION
+    #ifdef OLD_MODEL
     Q_ASSERT_X( index.row() < viewIndexes.size(), "dataRequest", " Out of range index requested! " );
     DItem item = items[ viewIndexes[index.row()] ];
+    #else
+
+    //!NEWW
+    //int ki = index.row(), kv = viewIt.size();
+    Q_ASSERT_X( index.row() < viewIt.size(), "dataRequest", " Out of range index requested! " );
+    DItem item = (*viewIt[ index.row() ].item);
+    //!<--ENDNEW
+    #endif
 
     if(role == Qt::ToolTipRole)
     {
@@ -197,6 +327,7 @@ QVariant DActionsListModel::data(const QModelIndex &index, int role) const
 
 void DActionsListModel::selectForDeletion(QModelIndexList indexes)
 {
+    #ifdef OLD_MODEL
     for(auto const& index : indexes)
     {
         Q_ASSERT_X( index.row() < viewIndexes.size(), "selectionForDeletion", " Out of range index requested! " );
@@ -204,10 +335,19 @@ void DActionsListModel::selectForDeletion(QModelIndexList indexes)
         items[ viewIndexes[ index.row() ] ].isKeepChecked = false;
         emit dataChanged(index, index);
     }
+    #endif
+    for(auto const& index : indexes)
+    {
+        Q_ASSERT_X( index.row() < viewIt.size(), "selectionForDeletion", " Out of range index requested! " );
+        viewIt[ index.row() ].item->isDeleteChecked = true;
+        viewIt[ index.row() ].item->isKeepChecked = false;
+        emit dataChanged(index, index);
+    }
 }
 
 void DActionsListModel::selectForKeep(QModelIndexList indexes)
 {
+    #ifdef OLD_MODEL
     for(auto const& index : indexes)
     {
         Q_ASSERT_X( index.row() < viewIndexes.size(), "selectionForKeep", " Out of range index requested! " );
@@ -215,24 +355,48 @@ void DActionsListModel::selectForKeep(QModelIndexList indexes)
         items[ viewIndexes[ index.row() ] ].isDeleteChecked = false;
         emit dataChanged(index, index);
     }
+    #endif
+    for(auto const& index : indexes)
+    {
+        Q_ASSERT_X( index.row() < viewIt.size(), "selectionForKeep", " Out of range index requested! " );
+        viewIt[ index.row() ].item->isKeepChecked = true;
+        viewIt[ index.row() ].item->isDeleteChecked = false;
+        emit dataChanged(index, index);
+    }
 }
 
 void DActionsListModel::deselectForDeletion(QModelIndexList indexes)
 {
+    #ifdef OLD_MODEL
     for(auto const& index : indexes)
     {
         Q_ASSERT_X( index.row() < viewIndexes.size(), "deselectionForDeletion", " Out of range index requested! " );
         items[ viewIndexes[ index.row() ] ].isDeleteChecked = false;
         emit dataChanged(index, index);
     }
+    #endif
+    for(auto const& index : indexes)
+    {
+        Q_ASSERT_X( index.row() < viewIt.size(), "deselectionForDeletion", " Out of range index requested! " );
+        viewIt[ index.row() ].item->isDeleteChecked = false;
+        emit dataChanged(index, index);
+    }
 }
 
 void DActionsListModel::deselectForKeep(QModelIndexList indexes)
 {
+    #ifdef OLD_MODEL
     for(auto const& index : indexes)
     {
         Q_ASSERT_X( index.row() < viewIndexes.size(), "deselectionForKeep", " Out of range index requested! " );
         items[ viewIndexes[ index.row() ] ].isKeepChecked = false;
+        emit dataChanged(index, index);
+    }
+    #endif
+    for(auto const& index : indexes)
+    {
+        Q_ASSERT_X( index.row() < viewIt.size(), "deselectionForKeep", " Out of range index requested! " );
+        viewIt[ index.row() ].item->isKeepChecked = false;
         emit dataChanged(index, index);
     }
 }
@@ -240,11 +404,12 @@ void DActionsListModel::deselectForKeep(QModelIndexList indexes)
 void DActionsListModel::deleteFilesNow(QModelIndexList indexes)
 {
     QModelIndex parent;
-    int r = 0;
-
     qSort(indexes.begin(), indexes.end(),
           [](const QModelIndex& lhs, const QModelIndex& rhs) { return lhs.row() < rhs.row(); });
 
+
+    #ifdef OLD_MODEL
+    int r = 0;
     for(auto const& i : indexes)
     {
         int index = i.row() - r;
@@ -309,12 +474,59 @@ void DActionsListModel::deleteFilesNow(QModelIndexList indexes)
             endRemoveRows();
         }
     }
+    #endif
+
+    //!
+    int t_count = 0;
+    for(auto const& i : indexes)
+    {
+        const int index = i.row() - (t_count++);
+        if(viewIt[index].item == viewIt[index].header)  //if we are dealing with headers
+            continue;
+        beginRemoveRows( parent, index, index );
+        dItems.erase( viewIt[index].item );
+        int pkpp = viewIt[index].header->header.itemCount();
+        viewIt[index].header->header.itemCount( viewIt.at(index).header->header.itemCount() - 1 );
+        bool removeHeader = false;
+        int kpp = viewIt[index].header->header.itemCount();
+        if(viewIt[index].header->header.itemCount() < 1)
+        {
+            std::cerr << "As Header:   " << viewIt[index].header->header.topString().toStdString() << std::endl;
+            std::cerr << "As Property: " << viewIt[index].header->property.getFilePath() << std::endl;
+            dItems.erase( viewIt[index].header );
+            removeHeader = true;
+        }
+        viewIt.removeAt( index );
+        endRemoveRows();
+
+        if(removeHeader)
+        {
+            const int headerIndex = index - 1;
+            Q_ASSERT_X(viewIt[headerIndex].item == viewIt[headerIndex].header, "ItemRemmoval",
+                       " This is a SERIOUS LOGIC ERROR!");
+
+            beginRemoveRows(parent, headerIndex, headerIndex);
+            viewIt.removeAt( headerIndex );
+            endRemoveRows();
+        }
+    }
+    //!
 }
 
 void DActionsListModel::commitMarkings()
 {
     beginResetModel();
+    #ifdef OLD_MODEL
     for(auto const& i : items)
+    {
+        if(i.isDeleteChecked)
+            recommender.setWeights(i.property.getFilePath(), std::string());
+        else if(i.isKeepChecked)
+            recommender.setWeights(std::string(), i.property.getFilePath());
+    }
+    #endif
+
+    for(auto const& i : dItems)
     {
         if(i.isDeleteChecked)
             recommender.setWeights(i.property.getFilePath(), std::string());
@@ -327,7 +539,11 @@ void DActionsListModel::commitMarkings()
 void DActionsListModel::unmarkAllKeeps()
 {
     beginResetModel();
+    #ifdef OLD_MODEL
     for(auto& k : items)
+        k.isKeepChecked = false;
+    #endif
+    for(auto& k : dItems)
         k.isKeepChecked = false;
     endResetModel();
 }
@@ -335,7 +551,12 @@ void DActionsListModel::unmarkAllKeeps()
 void DActionsListModel::unmarkAllDeletes()
 {
     beginResetModel();
+    #ifdef OLD_MODEL
     for(auto& k : items)
+        k.isDeleteChecked = false;
+    #endif
+
+    for(auto& k : dItems)
         k.isDeleteChecked = false;
     endResetModel();
 }
@@ -343,7 +564,14 @@ void DActionsListModel::unmarkAllDeletes()
 void DActionsListModel::unmarkAll()
 {
     beginResetModel();
+    #ifdef OLD_MODEL
     for(auto& k : items)
+    {
+        k.isKeepChecked = false;
+        k.isDeleteChecked = false;
+    }
+    #endif
+    for(auto& k : dItems)
     {
         k.isKeepChecked = false;
         k.isDeleteChecked = false;

@@ -1,6 +1,7 @@
 <RCC>
     <qresource prefix="/main">
         <file alias="mainIcon">icon640x640.png</file>
+        <file>splashScreen.png</file>
     </qresource>
     <qresource prefix="/images">
         <file alias="bg01">stylesheet/images/bg01.png</file>

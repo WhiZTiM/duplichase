@@ -44,7 +44,8 @@ SOURCES += \
     dupscan/useful_functions.cpp \
     dupscan/modelview/dactionslistview.cpp \
     dupscan/modelview/extrafileproperty.cpp \
-    dupscan/safe_deletion.cpp
+    dupscan/safe_deletion.cpp \
+    dupscan/modelview/ditemcontainer.cpp
 
 HEADERS  += \
 	backend/include/container_helpers/fp_holders.hpp \
@@ -84,7 +85,8 @@ HEADERS  += \
     test/fileproperty/sample_fileProperty.hpp \
     dupscan/modelview/extrafileproperty.hpp \
     dupscan/safe_deletion.hpp \
-    dglobals.hpp
+    dglobals.hpp \
+    dupscan/modelview/ditemcontainer.hpp
 
 #FORMS    += \
 #    UI/mainwindow.ui \

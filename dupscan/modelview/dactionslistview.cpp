@@ -1,4 +1,5 @@
 #include "dactionslistview.hpp"
+#include "ditemcontainer.hpp"
 #include "dupscan/modelview/ditem.hpp"
 #include <boost/filesystem.hpp>
 #include <QMenu>
@@ -195,6 +196,10 @@ bool DActionsListView::viewportEvent(QEvent *event)
             contextMenu.show();
         }
     }
+    else if(event->type() == QEvent::ContextMenu)
+    {
+        contextMenu.exec( QCursor::pos() );
+    }
     return rtn;
     //return true;
 }
@@ -376,9 +381,59 @@ QString DActionsListDelegate::fileSizeAsString(const ulong size) const
     return rtn;
 }
 
+
+void createDefaultExtensions()
+{
+    static bool k = true;
+    if(k)
+    {
+        ExtensionCategory c1;
+        c1.type = "video";
+        c1.extensionList << "3g2" << "3pg" << "asf" << "asx" << "avi" << "flv" <<
+                            "m4v" << "mp4" << "mov" << "mkv" << "mpg" << "vob" <<
+                            "xvid" << "wmv";
+        ExtensionFilterTypes::addExtensionCategory(c1);
+
+        c1.type = "audio";
+        c1.extensionList << "aif" << "pls" << "if" << "m3u" << "m4a" << "mid" <<
+                            "ogg" << "mpa" << "ra" << "wav" << "wma";
+        ExtensionFilterTypes::addExtensionCategory(c1);
+
+        c1.extensionList.clear();
+        c1.type = "document";
+        c1.extensionList << "doc" << "docx" << "log" << "msg" << "odt" << "pages"
+                         << "rtf" << "txt" << "tex" << "wpd" << "wps" << "pdf" << "epub"
+                         << "csv" << "dat" << "gbr" << "ged" << "ibooks" << "key"
+                         << "keychain" << "pps" << "ppt" << "pptx" << "sdf" << "tax2013"
+                         << "vcf" << "xls" << "xml" << "xlr" << "xlsx"
+                         << "3dm" << "3ds" << "max" << "collada" << "blend" << "obj";
+        ExtensionFilterTypes::addExtensionCategory(c1);
+
+        c1.extensionList.clear();
+        c1.type = "image";
+        c1.extensionList << "img" << "imgs" << "bmp" << "dds" << "gif" << "jpg" << "png"
+                         << "psd" << "pspimage" << "tga" << "thm" << "tif" << "tiff"
+                         << "yuv" << "wmf" << "ai" << "svg" << "eps" << "ps" << "jpeg" << "xcf";
+        ExtensionFilterTypes::addExtensionCategory(c1);
+
+        c1.extensionList.clear();
+        c1.type = "executable";
+        c1.extensionList << "exe" << "bat" << "sh" << "py" << "com" << "jar" << "wsf";
+        ExtensionFilterTypes::addExtensionCategory(c1);
+
+        c1.extensionList.clear();
+        c1.type = "custom";
+        ExtensionFilterTypes::addExtensionCategory(c1);
+
+        k = false;
+    }
+}
+
+
 ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     :   QWidget(parent)
 {
+    //createDefaultExtensions();
     QVBoxLayout *mainLayout         = new QVBoxLayout(this);
     filter_pushButton               = new QPushButton("&Filter", this);
     sort_pushButton                 = new QPushButton("&Sort", this);
@@ -418,10 +473,12 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     markingsContextMenu.addAction("Unmark All &Keeps", this, SIGNAL(unmarkAllKeeps()));
     markingsContextMenu.addAction("Unmark all &Deletes", this, SIGNAL(unmarkAllDeletes()));
 
-    connect(filter_pushButton, SIGNAL(clicked()), this, SIGNAL(filteringRequested()));
+    filterContextMenu.addAction("Not Yet Available")->setEnabled(false);
+
     connect(reset_pushButton, SIGNAL(clicked()), this, SIGNAL(resetRequested()));
     connect(commit_pushButton, SIGNAL(clicked()), this, SIGNAL(commitRequested()));
 
+    connect(filter_pushButton, SIGNAL(clicked()), this, SLOT(filterContextMenuClicked()));
     connect(sort_pushButton, SIGNAL(clicked()), this, SLOT(processSortRequest()));
     connect(autoSelection_pushButton, SIGNAL(clicked()), this, SLOT(processAutoSelectionClicked()));
     connect(markings_pushButton, SIGNAL(clicked()), this, SLOT(processMarkingsClicked()));
@@ -431,6 +488,8 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
             SLOT(autoSelectionContextMenuAboutToHide()));
     connect(&markingsContextMenu, SIGNAL(aboutToHide()), this,
             SLOT(markingsContextMenuAboutToHide()));
+    connect(&filterContextMenu, SIGNAL(aboutToHide()), this,
+            SLOT(filterContextMenuAboutToHide()));
 }
 
 void ActionsButtonPanel::sortByDescendingFileSize()
@@ -459,6 +518,17 @@ void ActionsButtonPanel::processMarkingsClicked()
 {
     markings_pushButton->setChecked(true);
     markingsContextMenu.exec(QCursor::pos());
+}
+
+void ActionsButtonPanel::filterContextMenuClicked()
+{
+    filter_pushButton->setChecked( true );
+    filterContextMenu.exec( QCursor::pos() );
+}
+
+void ActionsButtonPanel::filterContextMenuAboutToHide()
+{
+    filter_pushButton->setChecked(false);
 }
 
 void ActionsButtonPanel::sortContextMenuAboutToHide()

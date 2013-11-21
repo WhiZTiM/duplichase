@@ -2,6 +2,7 @@
 #define DACTIONSLISTMODEL_HPP
 
 #include <QList>
+#include <QLinkedList>
 #include <QAbstractListModel>
 #include <QSortFilterProxyModel>
 #include <dupscan/modelview/ditem.hpp>
@@ -45,11 +46,19 @@ public slots:
 
 
 private:
+    bool freshPreparation = true;
+    std::vector<DLS::ptrVEC_FileProperty> vec_duplicates;
     DLS::DuplicatesContainer duplicates;
     DLS::PathRecommender recommender;
     QList<int> viewIndexes;
     QList<DItem> items;
-    QList<QList<DItem>::iterator> viewIt;
+    QLinkedList<DItem> dItems;
+    struct iData {
+        QLinkedList<DItem>::iterator item;
+        QLinkedList<DItem>::Iterator header;
+    };
+
+    QList<iData> viewIt;
     ExtraPropertyHandler extraPropertyHandle;
 
     void prepareModel();
