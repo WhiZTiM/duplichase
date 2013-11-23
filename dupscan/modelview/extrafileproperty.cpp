@@ -24,7 +24,7 @@ void ExtraPropertyHandler::setMaxDelayTime(uint value)
 
 QString ExtraPropertyHandler::extraProperty(std::string filePath) const
 {
-    if(!mutex.tryLock( delayTimeOut.load(std::memory_order_relaxed) ))
+    if(!mutex.tryLock( delayTimeOut.load(std::memory_order_relaxed) ))  //seqential ordering not needed here
         return QString();
     std::lock_guard<QMutex> lock(mutex, std::adopt_lock);
     if(cache.contains(filePath))
@@ -47,6 +47,9 @@ void ExtraPropertyHandler::recieveSparkPlug(std::string key, QString value) cons
     cache.insert(key, new QString(value));
 }
 
+//! <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
+//! 1 JOHN 5:4 "....And this is The Victory that overcometh the world! even our Faith!!"
+//! <><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><><>
 
 void (ExtraPropertyHandler::*ExtraPropertyRequestWorker::Callable)(std::string, QString) const
  = &ExtraPropertyHandler::recieveSparkPlug;
