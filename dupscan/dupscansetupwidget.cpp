@@ -77,6 +77,9 @@ DupScanSetupWidget::DupScanSetupWidget(QWidget *parent) :
     connect(e_removeFolderPushButton, SIGNAL(clicked()), this, SLOT(remove_exclusionFolder()));
     connect(e_showInbuiltListPushButton, SIGNAL(clicked()), this, SLOT(showHide_inbuiltExclusionList()));
 
+    //!TODO
+    connect(s_addRemovableDrivePushButton, SIGNAL(clicked()), this, SLOT(add_searchFolder()));
+
     e_showInbuiltListPushButton->setChecked(true);
     showHide_inbuiltExclusionList();
 }

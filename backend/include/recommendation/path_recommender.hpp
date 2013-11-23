@@ -13,11 +13,11 @@ namespace DLS
     {
         public:
             const DEEdgeProperty* Clone(const Tree::DirectoryElement* Parent) const;
-            unsigned long outgoing() const;
-            void outgoing(unsigned);
+            long long outgoing() const;
+            void outgoing(long long);
 
-            unsigned long incoming() const;
-            void incoming(unsigned);
+            long long incoming() const;
+            void incoming(long long);
 
             void raiseOutgoing() const;
             void raiseIncoming() const;
@@ -28,8 +28,8 @@ namespace DLS
             void used(bool) const;
             bool used() const;
         private:
-            mutable unsigned long _outgoing = 0;     // Abuse of the keyword mutable! ...yikes!
-            mutable unsigned long _incoming = 0;     // Sometimes, you gotta write codes politically
+            mutable long long _outgoing = 0;     // Abuse of the keyword mutable! ...yikes!
+            mutable long long _incoming = 0;     // Sometimes, you gotta write codes politically
             mutable bool _used = false;
     };
 
@@ -44,8 +44,8 @@ namespace DLS
             bool raiseIncoming(const std::string&);
             bool lowerIncoming(const std::string&);
             bool lowerOutgoing(const std::string&);
-            unsigned long getIncoming(const std::string&) const;
-            unsigned long getOutgoing(const std::string&) const;
+            long long getIncoming(const std::string&) const;
+            long long getOutgoing(const std::string&) const;
             bool lastgetSuccessful() const;
         private:
             std::unordered_map<std::string, Tree::DirectoryElement*> mStringElem;
@@ -70,10 +70,10 @@ namespace DLS
             bool accentuate(const std::string& giver, const std::string& reciever);
             bool setWeights(const std::string& ToBeDeleted, const std::string& ToBeKept);
             bool unsetWeights(const std::string& ToBeDeleted, const std::string& ToBeKept);
-            unsigned long getIncomingIndex(const std::string& path) const;
-            unsigned long getOutgoingIndex(const std::string& path) const;
-            unsigned long getKeepingWeight(const std::string& path) const { return getOutgoingIndex(path); }
-            unsigned long getDeletionWeight(const std::string& path)const { return getIncomingIndex(path); }
+            long long getIncomingIndex(const std::string& path) const;
+            long long getOutgoingIndex(const std::string& path) const;
+            long long getKeepingWeight(const std::string& path) const { return getOutgoingIndex(path); }
+            long long getDeletionWeight(const std::string& path)const { return getIncomingIndex(path); }
 
             virtual ~PathRecommender();
         protected:

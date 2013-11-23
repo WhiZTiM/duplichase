@@ -36,12 +36,12 @@ void PathRecommender::addPath(const std::string& path)
     deAgent.addPath(path);
 }
 
-unsigned long PathRecommender::getIncomingIndex(const std::string& path) const
+long long PathRecommender::getIncomingIndex(const std::string& path) const
 {
     return deAgent.getIncoming(path);
 }
 
-unsigned long PathRecommender::getOutgoingIndex(const std::string& path) const
+long long PathRecommender::getOutgoingIndex(const std::string& path) const
 {
     return deAgent.getOutgoing(path);
 }
@@ -95,9 +95,9 @@ bool SimpleDEEdgeAgent::lastgetSuccessful() const
 }
 
 
-unsigned long SimpleDEEdgeAgent::getOutgoing(const std::string& path) const
+long long SimpleDEEdgeAgent::getOutgoing(const std::string& path) const
 {
-    unsigned long rtn = 0;
+    long long rtn = 0;
     const DirectoryElement* element = find(path);
     if(!element)
     {
@@ -120,9 +120,9 @@ unsigned long SimpleDEEdgeAgent::getOutgoing(const std::string& path) const
 }
 
 
-unsigned long SimpleDEEdgeAgent::getIncoming(const std::string& path) const
+long long SimpleDEEdgeAgent::getIncoming(const std::string& path) const
 {
-    unsigned long rtn = 0;
+    long long rtn = 0;
     const DirectoryElement* element = find(path);
     if(!element)
     {
@@ -225,22 +225,22 @@ const DEEdgeProperty* DEEdgeProperty::Clone(const DirectoryElement* parent) cons
     return new DEEdgeProperty();
 }
 
-void DEEdgeProperty::incoming(unsigned value)
+void DEEdgeProperty::incoming(long long value)
 {
     _incoming = value;
 }
 
-void DEEdgeProperty::outgoing(unsigned value)
+void DEEdgeProperty::outgoing(long long value)
 {
     _outgoing = value;
 }
 
-unsigned long DEEdgeProperty::incoming() const
+long long DEEdgeProperty::incoming() const
 {
     return _incoming;
 }
 
-unsigned long DEEdgeProperty::outgoing() const
+long long DEEdgeProperty::outgoing() const
 {
     return _outgoing;
 }

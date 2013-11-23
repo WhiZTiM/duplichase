@@ -31,8 +31,8 @@ struct DItem
     bool isKeepChecked = false;
     DLS::FileProperty property;
     GroupHeader header;
-    unsigned long deletionWeight;
-    unsigned long keepingWeight;
+    long long deletionWeight;
+    long long keepingWeight;
     int parentIndex = -1;
 };
 

@@ -2,6 +2,9 @@
 #define DACTIONSLISTMODEL_HPP
 
 #include <QList>
+#include <QMutex>
+#include <QFuture>
+#include <QStringList>
 #include <QLinkedList>
 #include <QAbstractListModel>
 #include <QSortFilterProxyModel>
@@ -9,6 +12,7 @@
 #include <dupscan/modelview/extrafileproperty.hpp>
 #include <backend/include/container_helpers/fp_holders.hpp>
 #include <backend/include/recommendation/path_recommender.hpp>
+#include <atomic>
 
 class DActionsListModel : public QAbstractListModel
 {
@@ -23,10 +27,22 @@ public:
 
 signals:
     void logMessage(QString message);
+    void statusBarMessage(QString message);
+    void scrollTo(QModelIndex index);
+    void makeSelection(QModelIndexList, QModelIndex scrolledTo);
+
+    void workerProcessStarted();
+    void workerProcessFinished();
+    void workerProcessProgressPercentage(int);
+
+    //!private stuff
+    void bestIndex(int);
 
 public slots:
     void sortModel(Qt::SortOrder sortOrder = Qt::DescendingOrder);
-    void filterModelByExtension(const QStringList& extensionList);
+    void filterModelByExtension(QStringList extensionList);
+    void filterModelBySize(ulong min, ulong max);
+    void filterModelByPath(QString parentPath );
     void resetViewItems();
 
     void commitMarkings();
@@ -35,15 +51,26 @@ public slots:
     void deselectForDeletion(QModelIndexList indexes);
     void deselectForKeep(QModelIndexList indexes);
     void deleteFilesNow(QModelIndexList indexes);
+    void removeIndexes(QModelIndexList indexes);
+    void removeIndexesSession(QModelIndexList indexes);
 
     void unmarkAllKeeps();
     void unmarkAllDeletes();
     void unmarkAll();
+
+    void selectNextGroupKeeps(QModelIndex index, bool selectNextGroup = false);
+    void selectNextGroupDeletes(QModelIndex index, bool selectNextGroup = false);
+
+    void autoSelectNextKeeps();
+    void autoSelectNextDeletes();
+    void autoSelectNextPossibilities();
     /*! TODO!!!
-    void filterModelByPath(const QString& parentPath );
-    void filterModelBySize(ulong min, ulong max);
     */
 
+private slots:
+    void bestIndexScrollTo(int);
+    void p_deleteFilesNow(QModelIndexList indexes, bool RemoveFromModel = false, bool MoveToTrash = false);
+    void p_selectNextGroup(QModelIndex index, bool selectNextGroup, bool keepers);
 
 private:
     bool freshPreparation = true;
@@ -63,6 +90,14 @@ private:
 
     void prepareModel();
     QString formartForLog(const QString& str);
+
+    QMutex dataMutex;
+    QFuture<void> w_selectionFuture;
+    std::atomic<bool> AnyProcessRunning;
+    void w_autoSelectNextKeeps();
+    void w_autoSelectNextDeletes();
+    void w_autoSelectNextPossibilities();
+    void w_autoSelectNext(bool keepers);
 };
 
 #endif // DACTIONSLISTMODEL_HPP

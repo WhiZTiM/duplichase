@@ -1,10 +1,13 @@
 #include "dactionslistmodel.hpp"
 #include "dupscan/safe_deletion.hpp"
+#include <QtConcurrent/QtConcurrent>
 #include <QStringList>
 #include <QVector>
 #include <QPair>
 #include <QFile>
 #include <iostream>
+#include <array>
+#include <QMutexLocker>
 
 Q_DECLARE_METATYPE(DLS::FileProperty)
 Q_DECLARE_METATYPE(DItem)
@@ -12,10 +15,12 @@ Q_DECLARE_METATYPE(DItem)
 //#define OLD_MODEL
 
 DActionsListModel::DActionsListModel(QObject *parent) :
-    QAbstractListModel(parent)
+    QAbstractListModel(parent), AnyProcessRunning(false)
 {
     qRegisterMetaType<DLS::FileProperty>("DLS::FileProperty");
     qRegisterMetaType<DItem> ("DItem");
+
+    connect(this, SIGNAL(bestIndex(int)), this, SLOT(bestIndexScrollTo(int)));
 }
 
 void DActionsListModel::setDuplicates(DLS::DuplicatesContainer container)
@@ -27,7 +32,6 @@ void DActionsListModel::setDuplicates(DLS::DuplicatesContainer container)
 
 void DActionsListModel::resetViewItems()
 {
-    beginResetModel();
     #ifdef OLD_MODEL
     viewIndexes.clear();
     for(int i=0; i < items.size(); i++)
@@ -38,10 +42,9 @@ void DActionsListModel::resetViewItems()
 
     freshPreparation = false;
     prepareModel();
-    endResetModel();
 }
 
-void DActionsListModel::filterModelByExtension(const QStringList &extensionList)
+void DActionsListModel::filterModelByExtension(QStringList extensionList)
 {
     beginResetModel();
     bool last_iteration_was_group_header = false;
@@ -92,11 +95,59 @@ void DActionsListModel::filterModelByExtension(const QStringList &extensionList)
             }
         }
     }
+    filteredViewIt.swap( viewIt );
+    endResetModel();
+}
+
+void DActionsListModel::filterModelBySize(ulong min, ulong max)
+{
+    Q_ASSERT_X(false, "Model Routine", "Incomplete Implementation, rework here!");
+    beginResetModel();
+    QList<int> removalIndexes;
+    for(int i = 0; i < viewIt.size(); i++)
+    {
+        if(viewIt[i].item == viewIt[i].header)      //This is a header
+            continue;
+        const unsigned long fileSize = viewIt[i].item->property.getSize();
+        if(min > fileSize || fileSize > max)
+            removalIndexes.append( i );
+    }
+    int t_counter = 0;
+
+    qSort(removalIndexes);
+    for(auto const& i : removalIndexes)
+        viewIt.removeAt( (i - (t_counter++)) );
+
+    endResetModel();
+}
+
+void DActionsListModel::filterModelByPath(QString parentPath)
+{
+    beginResetModel();
+    QList<int> removalIndexes;
+    for(int i = 0; i < viewIt.size(); i++)
+    {
+        if(viewIt[i].item == viewIt[i].header)      //This is a header
+            continue;
+        const QString filePath( QString::fromStdString( viewIt[i].item->property.getFilePath() ) );
+        if(filePath.contains( parentPath, Qt::CaseInsensitive ))
+            removalIndexes.append( i );
+    }
+
+    int t_counter = 0;
+    qSort(removalIndexes);
+    for(auto const& i : removalIndexes)
+    {
+        const int k = i - (t_counter++);
+        viewIt[k].header->header.itemCount( viewIt.at(k).header->header.itemCount() - 1 );
+        viewIt.removeAt( k );
+    }
 
     endResetModel();
 }
 
 /// THis function exposes the poor design and loose cohesion of this Software. Runs at O(2n + nlogn) worst case
+/// EDIT: FIXED! Now nuns at (Sorting cost + copying cost) --> (nlogn + n) --> nlogn;
 void DActionsListModel::sortModel(Qt::SortOrder sortOrder)
 {
     beginResetModel();
@@ -221,7 +272,7 @@ void DActionsListModel::prepareModel()
     viewIt.clear();
     QLinkedList<DItem>::iterator pLast = dItems.begin();
 
-    int i = 1, t_counter = 0, headerIndex = 0;
+    int i = 1, /*t_counter = 0,*/ headerIndex = 0;
     for(auto& item : vec_duplicates)
     {
         DItem itm;
@@ -244,7 +295,7 @@ void DActionsListModel::prepareModel()
         kItem.item = pLast;
         viewIt.push_back( kItem );
         DItem& itmHeader_reference = dItems.back();                 //! REMOVE
-        auto itmHeader_iter = pLast;
+        //auto itmHeader_iter = pLast;
 
         // Clear data for reuse in the for loop below
         itm.header.topString("");
@@ -278,10 +329,10 @@ void DActionsListModel::prepareModel()
 
         //!NEWW
         itmHeader_reference.header.itemCount( itemCount );
-        std::cerr << "Header Count Original: " << itmHeader_reference.header.itemCount() << std::endl;
-        std::cerr << "Header Count Iterator: " << itmHeader_iter->header.itemCount() << std::endl;
-        std::cerr << "Header Count LastIter: " << (dItems.end() - 1)->header.itemCount() << std::endl;
-        std::cerr << "Back() @: " << &(dItems.back()) << "  Address of pLast @:" << &(*pLast) << std::endl;
+        //std::cerr << "Header Count Original: " << itmHeader_reference.header.itemCount() << std::endl;
+        //std::cerr << "Header Count Iterator: " << itmHeader_iter->header.itemCount() << std::endl;
+        //std::cerr << "Header Count LastIter: " << (dItems.end() - 1)->header.itemCount() << std::endl;
+        //std::cerr << "Back() @: " << &(dItems.back()) << "  Address of pLast @:" << &(*pLast) << std::endl;
 
         //sets the group size as from the last element in the loop
         if(Set_header_size)
@@ -401,7 +452,22 @@ void DActionsListModel::deselectForKeep(QModelIndexList indexes)
     }
 }
 
+void DActionsListModel::removeIndexes(QModelIndexList indexes)
+{
+    p_deleteFilesNow(indexes, false, false);
+}
+
+void DActionsListModel::removeIndexesSession(QModelIndexList indexes)
+{
+    p_deleteFilesNow(indexes, true, false);
+}
+
 void DActionsListModel::deleteFilesNow(QModelIndexList indexes)
+{
+    p_deleteFilesNow(indexes, true, true);
+}
+
+void DActionsListModel::p_deleteFilesNow(QModelIndexList indexes, bool RemoveFromModel, bool MoveToTrash)
 {
     QModelIndex parent;
     qSort(indexes.begin(), indexes.end(),
@@ -480,24 +546,44 @@ void DActionsListModel::deleteFilesNow(QModelIndexList indexes)
     int t_count = 0;
     for(auto const& i : indexes)
     {
-        const int index = i.row() - (t_count++);
+        const int index = i.row() - t_count;
         if(viewIt[index].item == viewIt[index].header)  //if we are dealing with headers
             continue;
+        ++t_count;
+
         beginRemoveRows( parent, index, index );
-        dItems.erase( viewIt[index].item );
-        int pkpp = viewIt[index].header->header.itemCount();
+        const QString filePath(QString::fromStdString( viewIt[index].item->property.getFilePath() ));
+
+        if(RemoveFromModel)
+            dItems.erase( viewIt[index].item );
+
+        //int pkpp = viewIt[index].header->header.itemCount();
         viewIt[index].header->header.itemCount( viewIt.at(index).header->header.itemCount() - 1 );
         bool removeHeader = false;
-        int kpp = viewIt[index].header->header.itemCount();
+        //int kpp = viewIt[index].header->header.itemCount();
         if(viewIt[index].header->header.itemCount() < 1)
         {
-            std::cerr << "As Header:   " << viewIt[index].header->header.topString().toStdString() << std::endl;
-            std::cerr << "As Property: " << viewIt[index].header->property.getFilePath() << std::endl;
-            dItems.erase( viewIt[index].header );
+            if(RemoveFromModel)
+                dItems.erase( viewIt[index].header );
             removeHeader = true;
         }
         viewIt.removeAt( index );
         endRemoveRows();
+
+        if( RemoveFromModel && MoveToTrash )
+        {
+            QString deletionReply = DeletionAgent::toTrash( filePath );
+            if(!deletionReply.isEmpty())
+            {
+                QString ddkk("Problem With \"" + filePath + "\" " + deletionReply);
+                emit logMessage( formartForLog( ddkk ) );
+            }
+            else
+            {
+                QString ddkk("The File \"" + filePath + "\" was SUCSESSFULLY deleted");
+                emit logMessage( formartForLog( ddkk ) );
+            }
+        }
 
         if(removeHeader)
         {
@@ -577,6 +663,169 @@ void DActionsListModel::unmarkAll()
         k.isDeleteChecked = false;
     }
     endResetModel();
+}
+
+void DActionsListModel::autoSelectNextKeeps()
+{
+    if(AnyProcessRunning.load())
+    {
+        emit statusBarMessage(QString("Please Be Patient With the Current Operation"));
+        return;
+    }
+    if(!w_selectionFuture.isRunning())
+        w_selectionFuture = QtConcurrent::run(this, &DActionsListModel::w_autoSelectNextKeeps);
+}
+
+void DActionsListModel::autoSelectNextDeletes()
+{
+    if(AnyProcessRunning.load())
+    {
+        emit statusBarMessage(QString("Please Be Patient With the Current Operation"));
+        return;
+    }
+    if(!w_selectionFuture.isRunning())
+        w_selectionFuture = QtConcurrent::run(this, &DActionsListModel::w_autoSelectNextDeletes);
+}
+
+void DActionsListModel::autoSelectNextPossibilities()
+{
+    if(AnyProcessRunning.load())
+    {
+        emit statusBarMessage(QString("Please Be Patient With the Current Operation"));
+        return;
+    }
+    if(!w_selectionFuture.isRunning())
+        w_selectionFuture = QtConcurrent::run(this, &DActionsListModel::w_autoSelectNextPossibilities);
+}
+
+void DActionsListModel::w_autoSelectNextKeeps()
+{
+    w_autoSelectNext(true);
+}
+
+void DActionsListModel::w_autoSelectNextDeletes()
+{
+    w_autoSelectNext(false);
+}
+
+void DActionsListModel::w_autoSelectNextPossibilities()
+{
+    //---> Some cranky stuff here...    ||| NOT YET AVAILABLE |||
+    //====>>> To be deployed hopefully in versions greater than 0.8.0 <><><><><><><><><><><>
+}
+
+void DActionsListModel::w_autoSelectNext(bool keepers)
+{
+    QMutexLocker lock(&dataMutex);
+    emit workerProcessStarted();
+    AnyProcessRunning.store(true);
+
+    QPair<int, long long> best;
+    best.first = 0;
+    best.second = 0;
+    const int total = viewIt.size();
+    int counter = -1;
+    int quarters = total / 10;
+    for(auto const& k : viewIt)
+    {
+        ++counter;
+        if(k.item->isGroupHeader)
+            continue;
+        long long value;
+
+        if(keepers)
+            value = recommender.getKeepingWeight( k.item->property.getFilePath() );
+        else
+            value = recommender.getDeletionWeight( k.item->property.getFilePath() );
+
+        if(best.second <= value)
+        {
+            best.second = value;
+            best.first = counter;
+        }
+        if(counter >= quarters)
+        {
+            emit workerProcessProgressPercentage( static_cast<int>( total / quarters ) );
+            quarters += 10;
+        }
+    }
+    emit bestIndex(best.first);
+    AnyProcessRunning.store(false);
+    emit workerProcessFinished();
+}
+
+void DActionsListModel::bestIndexScrollTo(int k)
+{
+    emit scrollTo( createIndex(k, 0) );
+}
+
+void DActionsListModel::selectNextGroupKeeps(QModelIndex index, bool selectNextGroup)
+{
+   p_selectNextGroup(index, selectNextGroup, true);
+}
+
+void DActionsListModel::selectNextGroupDeletes(QModelIndex index, bool selectNextGroup)
+{
+    p_selectNextGroup(index, selectNextGroup, false);
+}
+
+void DActionsListModel::p_selectNextGroup(QModelIndex index, bool selectNextGroup, bool keepers)
+{
+    if(!index.isValid())
+        return;
+    Q_ASSERT_X(index.row() < viewIt.size(), "SelectNext_Routines", "FATAL ERROR: Index out of Range");
+    //First detect the range of Values we need to sample... || Upper and Lower bounds
+        int idx_lower = index.row(), idx_upper = idx_lower;
+
+        if(selectNextGroup)
+        {
+            int t_track = idx_lower;
+            while( ( ++t_track < viewIt.size() ) && (viewIt[t_track].item != viewIt[t_track].header) );
+            idx_lower = idx_upper = t_track;
+        }
+
+        for(int i = idx_lower; i >= 0; i--)
+            if(viewIt[i].item == viewIt[i].header)
+            {
+                idx_lower = i + 1;
+                break;
+            }
+
+        for(int i = idx_upper + 1; i < viewIt.size(); i++)
+            if(viewIt[i].item == viewIt[i].header)
+            {
+                idx_upper = i;
+                break;
+            }
+
+        if(!(idx_upper - idx_lower))
+            return;
+        QList<int> ranges;
+        for(int i = idx_lower; i < idx_upper; i++)
+            ranges.append( i );
+
+        if(keepers)
+            qSort(ranges.begin(), ranges.end(), [&](int lhs, int rhs)
+            {
+                return (  recommender.getKeepingWeight( viewIt[lhs].item->property.getFilePath() )
+                        > recommender.getKeepingWeight( viewIt[rhs].item->property.getFilePath() ) );
+            });
+        else
+            qSort(ranges.begin(), ranges.end(), [&](int lhs, int rhs)
+            {
+                return (  recommender.getDeletionWeight( viewIt[lhs].item->property.getFilePath() )
+                        > recommender.getDeletionWeight( viewIt[rhs].item->property.getFilePath() ) );
+            });
+
+        QModelIndexList indexes;
+        QModelIndex ScrolledTo = createIndex( idx_lower - 1 , 0 );
+        //Loop... selecting everything within this range whilest skipping the last item
+        for(int i = 0; i < ranges.size() - 1; i++)
+        {
+            indexes.append( createIndex( ranges[i], 0 ) );
+        }
+
+        emit makeSelection(indexes, ScrolledTo);
 }
 
 QString DActionsListModel::formartForLog(const QString &str)

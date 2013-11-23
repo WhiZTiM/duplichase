@@ -45,7 +45,7 @@ DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     superSpeedLabel = new QLabel(this);
     mainStackedLayout->addWidget(superSpeedLabel);
 
-
+    /*
     //Political Test Case
     DLS::FileProperty prop;
     prop.setSize(435325);
@@ -76,6 +76,7 @@ DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     fileListingWidget->addItem(item2);
     //item2->setSizeHint(QSize(item->sizeHint().width(), item->sizeHint().height() + 30) );
     //End Politics
+    */
     connect(this, SIGNAL(scanProgress(int)), this, SLOT(testUpdateSlot(int)));
     connect(this, SIGNAL(filePropertyAddSignal(DLS::FileProperty,int)), this, SLOT(addDLSFileProperty(DLS::FileProperty,int)));
     //connect(this, SIGNAL(logMessage(LOGType,QString,QString)), this, SLOT(processLogMessage(LOGType,QString,QString)));

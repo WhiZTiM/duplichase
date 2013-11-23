@@ -32,19 +32,43 @@ QString parent_of_generic_path(const std::string path)
 DActionsListView::DActionsListView(QWidget *parent) :
     QListView(parent), contextMenu(this)
 {
-    openDirectoryAction = contextMenu.addAction("&Open Directory", this, SLOT(action_openDirectory()));
-    openFileAction      = contextMenu.addAction("Open &File", this, SLOT(action_openFile()));
+    openDirectoryAction     = contextMenu.addAction("&Open Directory", this, SLOT(action_openDirectory()));
+    openFileAction          = contextMenu.addAction("Open &File", this, SLOT(action_openFile()));
     contextMenu.addSeparator();
-    keepAction          = contextMenu.addAction("Mark for keep", this, SLOT(action_markForKeep()));
-    deleteAction        = contextMenu.addAction("Mark for Deletion", this, SLOT(action_markForDelete()));
+    keepAction              = contextMenu.addAction("Mark for keep", this, SLOT(action_markForKeep()));
+    deleteAction            = contextMenu.addAction("Mark for Deletion", this, SLOT(action_markForDelete()));
     contextMenu.addSeparator();
-    deleteNowAction     = contextMenu.addAction("Delete Now", this, SLOT(action_deletFileNow()));
+    removeFromViewAction    = contextMenu.addAction("Remove From View", this, SLOT(action_removeFromView()));
+    removeFromScannerAction = contextMenu.addAction("Remove From DupScan", this, SLOT(action_removeFromScanner()));
+    contextMenu.addSeparator();
+    deleteNowAction         = contextMenu.addAction("Delete Now", this, SLOT(action_deletFileNow()));
+
 
     openDirectoryAction->setToolTip(tr("Opens The directory where this file is contained"));
     openFileAction->setToolTip(tr("Opens the File with default Application"));
     deleteNowAction->setToolTip("Deletes the File Now");
     keepAction->setCheckable(true);
     deleteAction->setCheckable(true);
+}
+
+void DActionsListView::selectKeepsGroup()
+{
+    selectNextGroupKeeps( currentIndex(), false );
+}
+
+void DActionsListView::selectDeletesGroup()
+{
+    selectNextGroupDeletes( currentIndex(), false);
+}
+
+void DActionsListView::selectNextKeepsGroup()
+{
+    selectNextGroupKeeps( currentIndex(), true);
+}
+
+void DActionsListView::selectNextDeletesGroup()
+{
+    selectNextGroupDeletes( currentIndex(), true);
 }
 
 void DActionsListView::action_openFile()
@@ -105,6 +129,16 @@ void DActionsListView::action_markForDelete()
     }
 }
 
+void DActionsListView::action_removeFromView()
+{
+    emit removeFromView( selectionModel()->selectedIndexes() );
+}
+
+void DActionsListView::action_removeFromScanner()
+{
+    emit removeFromScanner( selectionModel()->selectedIndexes() );
+}
+
 void DActionsListView::action_deletFileNow()
 {
     int w1 = QMessageBox::warning( this, tr("Deletion:: 1st WARNING"),
@@ -120,7 +154,8 @@ void DActionsListView::action_deletFileNow()
     if(w1 != QMessageBox::Yes)
             return;
     //! We do not want the user to accidentally delete somefiles outside the view
-    emit deleteFileNow(selectedIndexes());
+    //! CHANGED!
+    emit deleteFileNow(selectionModel()->selectedIndexes());
 }
 
 void DActionsListView::prepareContextMenu()
@@ -176,7 +211,26 @@ void DActionsListView::processGroupHeaderSelected(QModelIndex index)
     //
 }
 
+void DActionsListView::makeSelection(QModelIndexList indexes, QModelIndex ScrolledTo)
+{
+    selectionModel()->clear();
+    for(auto& index : indexes)
+        selectionModel()->select(index, QItemSelectionModel::Select);
+    if(ScrolledTo.isValid())
+        scrollTo(ScrolledTo);
+}
 
+void DActionsListView::scrollToIndex(QModelIndex index)
+{
+    selectionModel()->clear();
+    selectionModel()->select(index, QItemSelectionModel::Select);
+    scrollTo(index);
+}
+
+void DActionsListView::scrollTo(const QModelIndex &index, ScrollHint hint)
+{
+    QListView::scrollTo(index, hint);
+}
 
 bool DActionsListView::viewportEvent(QEvent *event)
 {
@@ -465,9 +519,14 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     sortContextMenu.addAction("&Descending Order of File size", this, SLOT(sortByDescendingFileSize()));
     sortContextMenu.addAction("&Ascending Order of File size", this, SLOT(sortByAscendingFileSize()));
 
-    autoSelectionContextMenu.addAction("Auto Select Next &Possibilities", this, SIGNAL(autoSelectNextPossibilities()));
-    autoSelectionContextMenu.addAction("Auto Select Next &Keeps", this, SIGNAL(autoSelectNextKeeps()));
-    autoSelectionContextMenu.addAction("Auto Select Next &Deletes", this, SIGNAL(autoSelectNextDeletes()));
+    autoSelectionContextMenu.addAction("Select Group Keeps", this, SIGNAL(selectGroupKeeps()));
+    autoSelectionContextMenu.addAction("Select Group Deletes", this, SIGNAL(selectGroupDeletes()));
+    autoSelectionContextMenu.addAction("Select Next Group Keeps", this, SIGNAL(selectNextGroupKeeps()));
+    autoSelectionContextMenu.addAction("Select Next Group Deletes", this, SIGNAL(selectNextGroupDeletes()));
+    autoSelectionContextMenu.addAction("Auto Select Next &Possibilities", this, SIGNAL(autoSelectNextPossibilities()))
+            ->setEnabled(false);
+    autoSelectionContextMenu.addAction("Auto Select Highest &Keeps", this, SIGNAL(autoSelectNextKeeps()));
+    autoSelectionContextMenu.addAction("Auto Select Highest &Deletes", this, SIGNAL(autoSelectNextDeletes()));
 
     markingsContextMenu.addAction("Unmark &All", this, SIGNAL(unmarkAll()));
     markingsContextMenu.addAction("Unmark All &Keeps", this, SIGNAL(unmarkAllKeeps()));
