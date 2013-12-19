@@ -2,12 +2,14 @@
 #define DUPSCANFINDWIDGET_HPP
 
 #include <chrono>
+#include <atomic>
 #include <QTime>
 #include <QWidget>
 #include <QMutex>
 #include <QFuture>
 #include "logformatter.hpp"
 #include <QStyledItemDelegate>
+#include <QWaitCondition>
 #include "backend/include/container_helpers/fp_holders.hpp"
 
 QT_BEGIN_NAMESPACE
@@ -96,16 +98,18 @@ private:
     QTime processRunningTimeStart;
     QMutex scannerMutex;
     QMutex counterMutex;
+    QWaitCondition scannerWaitCondition;
+    QWaitCondition counterWaitContition;
 
     unsigned long viewLimit;
     unsigned long transversedFileCounts = 0;
-    volatile bool scannerMutexLocked = false;
-    volatile bool counterMutexLocked = false;
-    volatile bool cancelTransversal = false;
-    volatile bool cancelSCanning = false;
-    volatile bool superSpeedSet = false;
-    volatile bool suspendAllScanners = false;
-    volatile int scannerSleepInterval = 0;
+    std::atomic<bool> scannerPaused;
+    std::atomic<bool> counterPaused;
+    std::atomic<bool> cancelTransversal;
+    std::atomic<bool> cancelSCanning;
+    std::atomic<bool> superSpeedSet;
+    std::atomic<bool> suspendAllScanners;
+    std::atomic<int> scannerSleepInterval;
 
     bool startInternalScanner(const QStringList scanFolders, const QStringList exclusionFolders);
     void updateScanProgressSignal(unsigned long value);

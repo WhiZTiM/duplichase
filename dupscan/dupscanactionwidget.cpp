@@ -1,14 +1,13 @@
+#include <QLabel>
+#include <QMessageBox>
 #include <QHBoxLayout>
+#include <QApplication>
+#include <QProgressDialog>
 #include "dupscanactionwidget.hpp"
 #include "dupscan/modelview/dactionslistview.hpp"
 #include "dupscan/modelview/dactionslistmodel.hpp"
+#include "dupscan/modelview/filepropertyserializer.hpp"
 #include "test/fileproperty/sample_fileProperty.hpp"
-
-DuplicatesListView::DuplicatesListView(QWidget *parent)
-    :   QListView(parent)
-{
-    //
-}
 
 
 DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
@@ -22,8 +21,13 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     view->setModel( model );
     view->setItemDelegate( delegate );
 
+    emptyViewLabel = new QLabel("<qt><h2>No Duplicate Files Found</h2></qt>", this);
+    stackedWidget = new QStackedWidget(this);
+    stackedWidget->addWidget( emptyViewLabel );
+    stackedWidget->addWidget( view );
+
     setLayout( new QHBoxLayout );
-    layout()->addWidget( view );
+    layout()->addWidget( stackedWidget );
 
     connect(view, SIGNAL(markForKeep(QModelIndexList)), model, SLOT(selectForKeep(QModelIndexList)));
     connect(view, SIGNAL(unmarkForKeep(QModelIndexList)), model, SLOT(deselectForKeep(QModelIndexList)));
@@ -54,6 +58,7 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     connect(model, SIGNAL(makeSelection(QModelIndexList,QModelIndex)), view,
             SLOT(makeSelection(QModelIndexList,QModelIndex)));
 
+    connect(model, SIGNAL(modelWasJustSet()), this, SLOT(modelWasJustSet()));
     //model->setDuplicates( sampleDuplicateContainer() );
 
 }
@@ -62,6 +67,77 @@ void DupScanActionWidget::setDuplicates(DLS::DuplicatesContainer duplicates)
 {
     model->setDuplicates( duplicates );
     update();
+}
+
+void DupScanActionWidget::modelWasJustSet()
+{
+    if(model->isEmpty())
+    {
+        stackedWidget->setCurrentIndex( 0 );
+    }
+    else
+        stackedWidget->setCurrentIndex( 1 );
+}
+
+bool DupScanActionWidget::saveResultsToFile(const QString &fileName)
+{
+    FilePropertySerializer serializer;
+    if(serializer.toDisk(fileName, model->getCurrentDuplicates()))
+    {
+        logMessage("Successfully saved!");
+        return true;
+    }
+    QMessageBox::critical(this, tr("File Error"), serializer.error());
+    return false;
+}
+
+bool DupScanActionWidget::loadResultsFromFile(const QString &fileName)
+{
+    FilePropertySerializer serializer;
+    DLS::DuplicatesContainer duplicates = serializer.fromDisk( fileName );
+    if(serializer.error().isEmpty())
+    {
+        update();
+        QProgressDialog progress(tr("Verifying Files in Place.."), tr("Cancel"), 0, 100, this);
+        progress.setMaximumWidth( 600 );
+        progress.setWindowTitle(tr("Please Wait - - Verifying Files in Place.."));
+        progress.setWindowModality(Qt::WindowModal);
+        progress.setMinimumDuration(1000);
+
+        std::function<void(QString)> setNameCallBack =
+                //std::bind(&QProgressDialog::setLabelText, std::ref(progress), std::placeholders::_1);
+                [&](const QString& name) -> void
+        {
+            progress.setLabelText( "<qt><b>Verifying: </b></qt>" + name);
+            QApplication::processEvents();
+        };
+
+        std::function<void(int)> setProgressCallBack =
+                std::bind(&QProgressDialog::setValue, std::ref(progress), std::placeholders::_1);
+
+        std::function<bool()> isTaskCancelledCallBack =
+                std::bind(&QProgressDialog::wasCanceled, std::ref(progress));
+
+        FilePropertySerializer::VerificationCallbacks vc;
+        vc.CurrentFileCallback = setNameCallBack;
+        vc.PercentageProgressCallback = setProgressCallBack;
+        vc.isTaskCancelledCallback = isTaskCancelledCallBack;
+
+
+        FilePropertySerializer::verifyAndFilter_inPlace(duplicates, vc);
+
+        int rtn = QMessageBox::information(this, tr("Write Back Changes"),
+                                 tr("Do you wish to write back verified changes to the file"),
+                                           QMessageBox::No | QMessageBox::Yes, QMessageBox::No);
+        if(rtn == QMessageBox::Yes)
+            saveResultsToFile( fileName );
+
+        model->setDuplicates( duplicates );
+        logMessage("Successfully Loaded!");
+        return true;
+    }
+    QMessageBox::critical(this, tr("File Error"), serializer.error());
+    return false;
 }
 
 QWidget* DupScanActionWidget::actionsButtonPanel() const

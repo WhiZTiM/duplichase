@@ -221,7 +221,7 @@ namespace DLS
 
         bool _newPath;
         bool _finallyEnded;
-        volatile bool _endCounting = false;
+        std::atomic<bool> _endCounting;
 
     };
 

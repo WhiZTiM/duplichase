@@ -33,6 +33,14 @@ DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     qRegisterMetaType<LOGType> ("LOGType");
     qRegisterMetaType<QVector<int>> ("QVector<int>");
 
+    scannerPaused = false;
+    counterPaused = false;
+    cancelTransversal = false;
+    cancelSCanning = false;
+    superSpeedSet = false;
+    suspendAllScanners = false;
+    scannerSleepInterval = 0;
+
     mainThread = QThread::currentThread();  //use it for pausing
 
     mainStackedLayout = new QStackedLayout(this);
@@ -137,7 +145,7 @@ void DupScanFindWidget::toggleSuperSpeed(bool value)
 
 bool DupScanFindWidget::scanningJobRunning() const
 {
-    return scannerFuture.isRunning() && !scannerMutexLocked;
+    return scannerFuture.isRunning() && !scannerPaused;
 }
 
 bool DupScanFindWidget::scanningJobFinished() const
@@ -147,7 +155,7 @@ bool DupScanFindWidget::scanningJobFinished() const
 
 bool DupScanFindWidget::scanningJobPaused() const
 {
-    return scannerMutexLocked;
+    return scannerPaused;
 }
 
 bool DupScanFindWidget::stopScanning()
@@ -167,17 +175,13 @@ void DupScanFindWidget::pauseScanning()
 {
     if(mainThread != QThread::currentThread())
         return;
-    //if(scannerFuture.isRunning())
-    //    scannerFuture.pause();
-    if(!scannerMutexLocked)
+    if(!scannerPaused)
     {
-        if(scannerMutex.tryLock(4000))
-            scannerMutexLocked = true;
+        scannerPaused = true;
     }
-    if(!counterMutexLocked)
+    if(!counterPaused)
     {
-        if(counterMutex.tryLock(4000))
-            counterMutexLocked = true;
+        counterPaused = true;
     }
     update();
     std::cout << "Paused" << std::endl;
@@ -187,15 +191,15 @@ void DupScanFindWidget::continueScanning()
 {
     if(mainThread != QThread::currentThread())
         return;
-    if(scannerMutexLocked)
+    if(scannerPaused)
     {
-        scannerMutex.unlock();
-        scannerMutexLocked = false;
+        scannerPaused = false;
+        scannerWaitCondition.wakeOne();
     }
-    if(counterMutexLocked)
+    if(counterPaused)
     {
-        counterMutex.unlock();
-        counterMutexLocked = false;
+        counterPaused = false;
+        counterWaitContition.wakeOne();
     }
     update();
     std::cout << "Continued" << std::endl;
@@ -268,8 +272,7 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
                             logMessage(LOGType::DLSCoreWarning, "Signal Fired", "FILE COUNTING ABORTED BY USER!");
                             return false;
                         }
-                        QThread::msleep(500);
-                        //std::this_thread::sleep_for(std::chrono::milliseconds(500));
+                        QThread::msleep(200);
                     }
                     transversedFileCounts = dfCon.totalCount();
                     emit finishedPathTransversal(true, transversedFileCounts);
@@ -295,11 +298,13 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
             {
                 logMessage(LOGType::DLSCoreWarning, "DupLichaSe-Core",
                            "Duplicate Finder Subsystem was shutdown by user");
+                dfCon.endCounting( true );
                 break;
             }
-            //addDLSFileProperty( dfCon.nextFile(), dfCon.ruleDepth() );
+
             filePropertyAddSignal( dfCon.nextFile(), dfCon.ruleDepth() );
             QString error( QString::fromStdString( dfCon.getCurrentError() ) );
+
             if(scannerSleepInterval)
                 QThread::msleep(scannerSleepInterval);
             if(!error.isEmpty())
@@ -312,7 +317,11 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
                 updateScanProgressSignal(dfCon.getCount());
                 temp_counter = 0;
             }
-            QMutexLocker locker(&scannerMutex);
+            if(scannerPaused)
+            {
+                QMutexLocker locker(&scannerMutex);
+                scannerWaitCondition.wait(&scannerMutex);
+            }
         }
         //updateScanProgressSignal(dfCon.totalCount());
         duplicates = dfCon.getDuplicatesContainer();
@@ -352,7 +361,6 @@ void DupScanFindWidget::updateScanProgressSignal(unsigned long value)
             if(!transversedFileCounts)
                 return;
             qreal f_val = 100.0 * value / transversedFileCounts;
-            //int val = static_cast<int>(f_val);
             int val = std::ceil(f_val);
             val = val > 100 ? 100 : val;
             emit scanProgress(val);
@@ -457,12 +465,10 @@ void DupScanFindWidget::processFinshedScanning(bool succeeded)
 
 DupScanFindWidget::~DupScanFindWidget()
 {
-    if(scannerMutexLocked)
-        scannerMutex.unlock();
-    if(counterMutexLocked)
-        counterMutex.unlock();
     cancelTransversal = true;
     cancelSCanning = true;
+    scannerWaitCondition.wakeAll();
+    counterWaitContition.wakeAll();
     transversalFuture.cancel();
     transversalFuture.waitForFinished();
     scannerFuture.cancel();

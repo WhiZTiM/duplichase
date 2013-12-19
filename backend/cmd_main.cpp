@@ -3,8 +3,8 @@
 #include "backend/include/path.hpp"
 #include "backend/include/rule_facade/rule_facade.hpp"
 //#include "backend/include/test/testsuite_1.hpp"
-#include "backend/include/filereader.hpp"
-#include "backend/include/test/testsuite_2.hpp"
+//#include "backend/include/filereader.hpp"
+//#include "backend/include/test/testsuite_2.hpp"
 #include "backend/include/test/testsuite_filereader_1.hpp"
 
 using namespace std;
@@ -34,7 +34,7 @@ int main2()
     //Test::test1();
     //Test::run_it();
 
-    Test::test2();
+    //Test::test2();
     //DLS::Test::filereader();
 
     cout << endl;

@@ -3,20 +3,14 @@
 
 #include <QWidget>
 #include <QListView>
+#include <QStackedWidget>
 #include "backend/include/container_helpers/fp_holders.hpp"
 
 class DActionsListView;
 class DActionsListModel;
 class DActionsListDelegate;
 class ActionsButtonPanel;
-
-class DuplicatesListView : public QListView
-{
-    Q_OBJECT
-public:
-    explicit DuplicatesListView(QWidget* parent = nullptr);
-};
-
+class QLabel;
 
 class DupScanActionWidget : public QWidget
 {
@@ -31,12 +25,19 @@ signals:
 
 public slots:
     void setDuplicates(DLS::DuplicatesContainer duplicates);
+    void modelWasJustSet();
+
+    bool saveResultsToFile(const QString& fileName);
+    bool loadResultsFromFile(const QString& fileName);
 
 private:
     DActionsListView* view;
     DActionsListModel* model;
     DActionsListDelegate* delegate;
     ActionsButtonPanel* actionsButton;
+
+    QStackedWidget* stackedWidget;
+    QLabel* emptyViewLabel;
 };
 
 #endif // DUPSCANACTIONWIDGET_HPP

@@ -10,45 +10,36 @@ namespace Test
 {
 
     using namespace DLS;
-    /*
-    void print(DLS::RecursiveDirectoryIterator iterator)
+
+    void tryBottleNeck()
     {
-        int count = 0;
-        while(!iterator.isEnded())
-        {
-            if(boost::filesystem::is_regular_file(iterator.getDirectoryEntry().path()))
-            {
-                std::cout << iterator.getDirectoryEntry().path().generic_string() << std::endl;
-                ++count;
-            }
-            ++iterator;
-        }
+        std::string p1("/home/whiztim/Documents/developer/C++/Codeblocks/Duplichase/include/FileReader.h.gch");
+        FileProperty pr1, pr2;
+        pr1.setFilePath(p1);
 
-        std::cout << "\nCounted: " << count << std::endl;
+        FR_by_size frS(8388608UL, 25165823UL);
+        frS(p1);
+        frS.getVerdict(pr1);
+
+        FR_by_hashA frA(15);
+        frA(p1);
+        frA.getVerdict(pr1);
+
+        FR_by_hashB frB(19);
+        frB(p1);
+        frB.getVerdict(pr1);
+
+        using namespace std;
+
+        cout << "Path:  " << pr1.getFilePath() << endl;
+        cout << "Size:  " << pr1.getSize() << endl;
+        cout << "hashA: " << pr1.getHashA() << endl;
+        cout << "hashB: " << pr1.getHashB() << endl;
+        cout << "\n" << endl;
+
+        //FileReader r1(p1);
+        //Hash::md5();
     }
-    */
-
-    /*
-    void run_it()
-    {
-
-        DLS::Tree::DirectoryElementHelper helper(true);
-
-        helper.addPath("/home/whiztim/Documents");
-        helper.addPath("/etc/");
-        helper.addPath("/usr/lib");
-        helper.addPath("/usr/lib64");
-        helper.addPath("/home/whiztim/Documents/developer/C++/LibreCAD/librecad/res");
-        helper.addPath("/home/whiztim/Pictures/Computer");
-
-        const std::string rootPath = "/home/whiztim/Documents/developer/C++/LibreCAD/librecad";
-
-        DLS::ExclusionHandler exclusion( helper.getDirectoryElement() );
-        DLS::RecursiveDirectoryIterator iterator(rootPath, exclusion);
-
-        print(iterator);
-    }
-    */
 
     void printFileProperty(const DLS::FileProperty& fp, int k = 0)
     {

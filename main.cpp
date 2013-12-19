@@ -12,6 +12,7 @@
 int main(int argc, char* argv[])
 {
     QApplication App(argc, argv);
+    std::ios::sync_with_stdio(false);
 
     QPixmap splashPixmap(":/main/splashScreen.png");
     QSplashScreen splashScreen(splashPixmap);

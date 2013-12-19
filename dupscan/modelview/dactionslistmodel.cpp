@@ -28,6 +28,7 @@ void DActionsListModel::setDuplicates(DLS::DuplicatesContainer container)
     duplicates = container;
     freshPreparation = true;
     prepareModel();
+    emit modelWasJustSet();
 }
 
 void DActionsListModel::resetViewItems()
@@ -40,8 +41,26 @@ void DActionsListModel::resetViewItems()
     }
     #endif
 
-    freshPreparation = false;
-    prepareModel();
+    //freshPreparation = false;
+    //prepareModel();
+
+    beginResetModel();
+
+    viewIt.clear();
+    QLinkedList<DItem>::iterator pIterHeader = dItems.begin();
+    for(QLinkedList<DItem>::iterator iter = dItems.begin(); iter != dItems.end(); iter++)
+    {
+        if(iter->isGroupHeader)
+            pIterHeader = iter;
+
+        iData kItem;
+        kItem.header = pIterHeader;
+        kItem.item = iter;
+        viewIt.push_back( kItem );
+    }
+
+    endResetModel();
+
 }
 
 void DActionsListModel::filterModelByExtension(QStringList extensionList)
@@ -831,4 +850,33 @@ void DActionsListModel::p_selectNextGroup(QModelIndex index, bool selectNextGrou
 QString DActionsListModel::formartForLog(const QString &str)
 {
     return "<font color='#4389A4'>><b>DupscanGUIModel: -</b></font>" + str;
+}
+
+DLS::DuplicatesContainer DActionsListModel::iDataListToDuplicatesContainer(const QList<iData> &list) const
+{
+    //Assuming iData list is correct. . . Any incorrectness is catastrophe!
+
+    DLS::DuplicatesContainer dups;
+    for(int i = 0; i < list.size(); i++)
+    {
+        const iData& d = list[i];
+        Q_ASSERT_X(d.header->isGroupHeader, "containerMaker", "Serious Logic Error!");
+        int limit = d.header->header.itemCount() + i;
+
+        DLS::ptrVEC_FileProperty vecPtr(new DLS::VEC_FileProperty);
+        for(; (i < list.size() && (list[i].header == d.header)); i++)
+        {
+            if(list[i].header == list[i].item)
+                continue;
+            vecPtr->push_back(list[i].item->property);
+        }
+        if(!vecPtr->empty())
+            dups.insert( vecPtr );
+    }
+    return dups;
+}
+
+DLS::DuplicatesContainer DActionsListModel::getCurrentDuplicates() const
+{
+    return iDataListToDuplicatesContainer( viewIt );
 }

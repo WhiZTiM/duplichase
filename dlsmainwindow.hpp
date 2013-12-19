@@ -36,6 +36,9 @@ private slots:
     void writeToStatusBar7(QString msg);
     void writeToLogger(QString msg);
 
+    void saveResultsToFile();
+    void loadResultsFromFile();
+
 private:
     Ui::DLSMainWindow *ui;
     DupScanSetupWidget*     dpSetupWidget;

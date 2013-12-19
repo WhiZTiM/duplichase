@@ -541,7 +541,7 @@
   </action>
   <action name="action_Open_DupLichaSe_File">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>&amp;Open DupLichaSe File</string>
@@ -549,7 +549,7 @@
   </action>
   <action name="action_Save_DupLichaSe_File">
    <property name="enabled">
-    <bool>false</bool>
+    <bool>true</bool>
    </property>
    <property name="text">
     <string>&amp;Save DupLichaSe File</string>

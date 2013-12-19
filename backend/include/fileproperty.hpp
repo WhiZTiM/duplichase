@@ -2,6 +2,8 @@
 #define FILEPROPERTY_H
 #include <string>
 
+typedef unsigned long ulong;
+
 namespace DLS
 {
 

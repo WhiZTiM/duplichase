@@ -20,6 +20,11 @@ class DActionsListModel : public QAbstractListModel
 public:
     explicit DActionsListModel(QObject *parent = 0);
     void setDuplicates(DLS::DuplicatesContainer container);
+    DLS::DuplicatesContainer getCurrentDuplicates() const;
+    inline bool isEmpty() const
+    {
+        return viewIt.isEmpty();
+    }
 
     //overriden functions
     int rowCount(const QModelIndex &parent) const override;
@@ -37,6 +42,7 @@ signals:
 
     //!private stuff
     void bestIndex(int);
+    void modelWasJustSet();
 
 public slots:
     void sortModel(Qt::SortOrder sortOrder = Qt::DescendingOrder);
@@ -98,6 +104,7 @@ private:
     void w_autoSelectNextDeletes();
     void w_autoSelectNextPossibilities();
     void w_autoSelectNext(bool keepers);
+    DLS::DuplicatesContainer iDataListToDuplicatesContainer(const QList<iData>& list) const;
 };
 
 #endif // DACTIONSLISTMODEL_HPP

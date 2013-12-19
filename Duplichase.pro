@@ -45,7 +45,9 @@ SOURCES += \
     dupscan/modelview/dactionslistview.cpp \
     dupscan/modelview/extrafileproperty.cpp \
     dupscan/safe_deletion.cpp \
-    dupscan/modelview/ditemcontainer.cpp
+    dupscan/modelview/ditemcontainer.cpp \
+    dupscan/modelview/filepropertyserializer.cpp \
+    dupscan/modelview/filepropertystoremanagement.cpp
 
 HEADERS  += \
 	backend/include/container_helpers/fp_holders.hpp \
@@ -86,7 +88,9 @@ HEADERS  += \
     dupscan/modelview/extrafileproperty.hpp \
     dupscan/safe_deletion.hpp \
     dglobals.hpp \
-    dupscan/modelview/ditemcontainer.hpp
+    dupscan/modelview/ditemcontainer.hpp \
+    dupscan/modelview/filepropertyserializer.hpp \
+    dupscan/modelview/filepropertystoremanagement.hpp
 
 #FORMS    += \
 #    UI/mainwindow.ui \
@@ -102,10 +106,18 @@ HEADERS  += \
 #    QML/qmlobj.qrc \
 #    UI/icon_set.qrc
 
-LIBS += \
-    -L/usr/lib/boost/lib \
-    -lboost_system \
-    -lboost_filesystem
+win32 {
+    LIBS += \
+        C:/libs/boost/bin.v2/libs/filesystem/build/gcc-mingw-4.8.0/debug/link-static/threading-multi/libboost_filesystem-mgw48-mt-d-1_54.a \
+        C:/libs/boost/bin.v2/libs/system/build/gcc-mingw-4.8.0/debug/link-static/threading-multi/libboost_system-mgw48-mt-d-1_54.a
+}
+
+!win32 {
+    LIBS += \
+        -L/usr/lib/boost/lib \
+        -lboost_system \
+        -lboost_filesystem
+}
 
 FORMS += \
     dlsmainwindow.ui \

@@ -8,7 +8,7 @@
  *  The namespace of DupLiChaSe
  */
 
-
+typedef unsigned long ulong;
 
 namespace DLS
 {

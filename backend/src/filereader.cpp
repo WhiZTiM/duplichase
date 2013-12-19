@@ -174,6 +174,7 @@ std::string FileReader::getStringByBytes(unsigned long bytes, OPT::Position posi
             rtn += std::string(buffer, _file.gcount());
             readd += _file.gcount();
         }
+        _file.clear();
     }
 
     //if the stream is to be reversed

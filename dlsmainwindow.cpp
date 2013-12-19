@@ -1,4 +1,5 @@
 #include <QFile>
+#include <QFileDialog>
 #include <QListWidget>
 #include <QHBoxLayout>
 #include <QStackedLayout>
@@ -69,13 +70,16 @@ void DLSMainWindow::setupMainWindowElements()
     connect(ui->scanSpeedHorizontalSlider, SIGNAL(valueChanged(int)), dpFindWidget, SLOT(setScanSpeed(int)));
     connect(dpSetupWidget, SIGNAL(statusMessage(QString)), this, SLOT(writeToStatusBar7(QString)) );
     connect(dpFindWidget, SIGNAL(scanProgress(int)), ui->progressBarFinite, SLOT(setValue(int)));
-
     connect(dpFindWidget, SIGNAL(logMessage(QString)), this, SLOT(writeToLogger(QString)));
     connect(dpActionWidget, SIGNAL(logMessage(QString)), this, SLOT(writeToLogger(QString)));
+    connect(dpActionWidget, SIGNAL(logMessage(QString)), this, SLOT(writeToStatusBar7(QString)));
 
     connect(dpFindWidget, SIGNAL(finishedScanning(bool)), this, SLOT(processFinishedScanning(bool)));
     connect(ui->progressSuspendPushButton, SIGNAL(clicked()), this, SLOT(processStart_Suspend()));
     connect(ui->progressStopPushButton, SIGNAL(clicked()), this, SLOT(StopScanner()));
+
+    connect(ui->action_Save_DupLichaSe_File, SIGNAL(triggered()), this, SLOT(saveResultsToFile()));
+    connect(ui->action_Open_DupLichaSe_File, SIGNAL(triggered()), this, SLOT(loadResultsFromFile()));
 
     processStart_Suspend();
 }
@@ -212,4 +216,26 @@ void DLSMainWindow::processFinishedScanning(bool succeeded)
     ui->stage3_ActionsRadioButton->setChecked(true);
     dpActionWidget->setDuplicates( dpFindWidget->getDuplicateContainer() );
     stageRadioClickEvent();
+}
+
+void DLSMainWindow::saveResultsToFile()
+{
+    QString savePath = QFileDialog::getSaveFileName(this, "Save Results as... ",
+                                                    QDir::homePath(),
+                                                    "DupLichaSe Result (*.dlsr)");
+    if(!savePath.endsWith(".dlsr"))
+        savePath += ".dlsr";
+    dpActionWidget->saveResultsToFile(savePath);
+}
+
+void DLSMainWindow::loadResultsFromFile()
+{
+    QString openPath = QFileDialog::getOpenFileName(this, "Open DupLichaSe results... ",
+                                                    QDir::homePath(),
+                                                    "DupLichaSe Result (*.dlsr)");
+    if(dpActionWidget->loadResultsFromFile(openPath))
+    {
+        ui->stage3_ActionsRadioButton->setChecked(true);
+        stageRadioClickEvent();
+    }
 }

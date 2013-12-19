@@ -9,7 +9,7 @@ using namespace DLS;
 
 DuplicateFinder::DuplicateFinder(const DLS::DuplicateFinderConstruct& dfConstruct)
     : filesCounted(false), dfAggregate(true, true), dfCon(dfConstruct), exclusionHandle(dfCon.exclusionHandle, false),
-    _newPath(true), _finallyEnded(false)
+      _newPath(true), _finallyEnded(false), _endCounting(false)
 {
     //static_assert(!dfConstruct._usingDeepCopy, "You must have deep Copy enabled")
     //ctor
@@ -280,12 +280,13 @@ int DuplicateFinderAggregator::addPath(const std::string& newPath)
                     }
 
                 }
+                _duplicateFound = true;
 
             }
 
             //! At this point we have the assurance that fp01 and fp02 are duplicates
-            _duplicateFound = true;
-            insertAppropriately(fp01, fp02);
+            if(_duplicateFound)
+                insertAppropriately(fp01, fp02);
             lastError = rulebg.getError();
             return 4;
         }
@@ -443,7 +444,7 @@ void DuplicateFinderAggregator::makeRuleBag()
         V_RF.push_back( new FR_by_size(8388608UL, 25165823UL) );
         rules.AddRule(V_RF.back());
 
-        V_RF.push_back( new FR_by_hashA(13) );
+        V_RF.push_back( new FR_by_hashA(15) );
         rules.AddRule(V_RF.back());
 
         V_RF.push_back( new FR_by_hashB(19) );
@@ -457,7 +458,7 @@ void DuplicateFinderAggregator::makeRuleBag()
         V_RF.push_back( new FR_by_size(25165824UL, 67108863UL) );
         rules.AddRule(V_RF.back());
 
-        V_RF.push_back( new FR_by_hashA(10) );
+        V_RF.push_back( new FR_by_hashA(16) );
         rules.AddRule(V_RF.back());
 
         V_RF.push_back( new FR_by_hashB(17) );
@@ -471,10 +472,10 @@ void DuplicateFinderAggregator::makeRuleBag()
         V_RF.push_back( new FR_by_size(67108864UL, 268435455UL) );
         rules.AddRule(V_RF.back());
 
-        V_RF.push_back( new FR_by_hashA(9) );
+        V_RF.push_back( new FR_by_hashA(19) );
         rules.AddRule(V_RF.back());
 
-        V_RF.push_back( new FR_by_hashB(12) );
+        V_RF.push_back( new FR_by_hashB(14) );
         rules.AddRule(V_RF.back());
 
         rulebg.AddRule(rules);
@@ -485,10 +486,10 @@ void DuplicateFinderAggregator::makeRuleBag()
         V_RF.push_back( new FR_by_size(67108864UL, 1073741823UL) );
         rules.AddRule(V_RF.back());
 
-        V_RF.push_back( new FR_by_hashA(7) );
+        V_RF.push_back( new FR_by_hashA(13) );
         rules.AddRule(V_RF.back());
 
-        V_RF.push_back( new FR_by_hashB(10) );
+        V_RF.push_back( new FR_by_hashB(12) );
         rules.AddRule(V_RF.back());
 
         rulebg.AddRule(rules);
@@ -499,10 +500,10 @@ void DuplicateFinderAggregator::makeRuleBag()
         V_RF.push_back( new FR_by_size(1073741824UL, 4294967295UL) );
         rules.AddRule(V_RF.back());
 
-        V_RF.push_back( new FR_by_hashA(5) );
+        V_RF.push_back( new FR_by_hashA(8) );
         rules.AddRule(V_RF.back());
 
-        V_RF.push_back( new FR_by_hashB(6) );
+        V_RF.push_back( new FR_by_hashB(10) );
         rules.AddRule(V_RF.back());
 
         rulebg.AddRule(rules);
