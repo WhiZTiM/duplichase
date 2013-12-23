@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright August 2013 - September 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #ifndef SIMPLE_DIRECTORY_TREE_HXX
 #define SIMPLE_DIRECTORY_TREE_HXX
 
@@ -10,7 +23,8 @@ namespace DLS
 namespace SimpleDirectoryTree
 {
 
-    //! forward declaration
+    //! An interface that is attached to every DirectoryElement Node
+    //! This is to allow the flexibility of adding extra stuff you wish to the element
     class IDirectoryElementProperty;
 
 
@@ -161,10 +175,8 @@ namespace SimpleDirectoryTree
     };
 
 
-//class DirectoryElement
 
-
-/*
+/* <<UNCOMMENT IF you want to recursively print nodes for testing...
 //! < Print Function for a directoryElement
 template<typename Stream, typename Delimeter>
 inline void writeToStream(const DirectoryElement* element, Stream& stream, Delimeter& delimeter, int c = 0)

@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright September 2013 - November 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #include "backend/include/recommendation/path_recommender.hpp"
 #include <boost/algorithm/string.hpp>
 
@@ -46,6 +59,16 @@ long long PathRecommender::getOutgoingIndex(const std::string& path) const
     return deAgent.getOutgoing(path);
 }
 
+void PathRecommender::resetAllToZero()
+{
+    deAgent.resetToZero();
+}
+
+void PathRecommender::clear()
+{
+    deAgent.clear();
+}
+
 PathRecommender::~PathRecommender()
 {
     //dtor
@@ -68,6 +91,34 @@ SimpleDEEdgeAgent::~SimpleDEEdgeAgent()
     delete rootElement;
 }
 
+void SimpleDEEdgeAgent::clear()
+{
+    mStringElem.clear();
+    delete rootElement;
+    rootElement = new DirectoryElement("__DLS<<PARENT>>DLS__");
+    rootElement->property(new DEEdgeProperty());
+}
+
+void SimpleDEEdgeAgent::resetToZero()
+{
+    for(auto const& paths : mStringElem)
+    {
+        const DirectoryElement* element = paths.second;
+        if(!element)
+            continue;
+        while(element->getParent())
+        {
+            const DEEdgeProperty* ptr = cast( element->property() );
+            if(!ptr)
+                break;
+            if(ptr->outgoing() == 0 && ptr->incoming() == 0)
+                break;
+            ptr->setIncoming(0);
+            ptr->setOutgoing(0);
+            element = element->getParent();
+        }
+    }
+}
 
 void SimpleDEEdgeAgent::addPath(const std::string& path)
 {
@@ -265,6 +316,16 @@ void DEEdgeProperty::lowerOutgoing() const
 {
     if(_outgoing > 0)
         --_outgoing;
+}
+
+void DEEdgeProperty::setOutgoing(long long value) const
+{
+    _outgoing = value < 0 ? 0 : value;
+}
+
+void DEEdgeProperty::setIncoming(long long value) const
+{
+    _incoming = value < 0 ? 0 : value;
 }
 
 void DEEdgeProperty::used(bool value) const

@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright August 2013 - September 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #ifndef DIRECTORY_ITERATOR_HXX
 #define DIRECTORY_ITERATOR_HXX
 
@@ -15,11 +28,10 @@ namespace DLS
     namespace fs = boost::filesystem;
     namespace Tree = SimpleDirectoryTree;
 
-    //! generates a directory separated array.:::implementation below
-    //std::vector<std::string> decomposePathToVector(const std::string& param);
 
 
-    //! TODO: totally rewrite this class in future
+    //! TODO: overload the Constructor and add new members to this class to support
+    //! the use of smart Pointers
     class ExclusionHandler
     {
     public:
@@ -179,8 +191,8 @@ namespace DLS
 
     };
 
-
     //! a free function that splits an std::string path on sighting "/", starting Left to Right
+    //! (a.k.a generates a directory separated array. as:::implemented below)
     inline std::vector<std::string> decomposePathToVector(const std::string& param)
     {
         std::vector<std::string> rtn;

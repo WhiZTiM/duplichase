@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright August 2013 - September 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #ifndef RULE_FACADE_H
 #define RULE_FACADE_H
 #include <string>
@@ -19,18 +32,6 @@
     *  This \class DLS::rule_facade attempts to alleviate this by it being a pre-defined contract to a set of rules which is to be used by a rule
     */
 
-    class Rule_X
-    {
-     public:
-        bool getSize(int h, char g=32)
-        {
-            std::cout << "HERE with: " << h << " and char: " << g << std::endl;
-            return true;
-        }
-    };
-
-    typedef bool (Rule_X::*sizer)(int, char);
-
     /*! \namespace DLS
     *  \brief scoping....
     */
@@ -51,7 +52,6 @@ namespace DLS
         typedef std::underlying_type<rule_option>::type tp;
         return static_cast<rule_option>( static_cast<tp>(a) | static_cast<tp>(b) );
     }
-
 
 
     /*! \class rule_facade<T, Result>
@@ -113,10 +113,7 @@ namespace DLS
 
     protected:
 
-
     };
-
-
 
 }
 #endif // RULE_FACADE_H

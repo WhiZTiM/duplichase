@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright August 2013 - September 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #ifndef FILERULES_H
 #define FILERULES_H
 
@@ -14,7 +27,8 @@
 
 namespace DLS
 {
-
+    const unsigned long MAX_MEMORY_BUFFER_LIMIT = 67108863;
+    std::string readerHexDigest(FileReader& reader, float percentage, FileReader::OPT::Position Options);
 
     ///////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////
@@ -140,8 +154,9 @@ namespace DLS
             }
 
             //! read percentage bytes
-            Hash::MD5 md( reader.getStringByPercentage(percent, FileReader::OPT::Start) );
-            hashA = md.hexdigest();
+            //Hash::MD5 md( reader.getStringByPercentage(percent, FileReader::OPT::Start) );
+            //hashA = md.hexdigest();
+            hashA = readerHexDigest(reader, percent, FileReader::OPT::Start);
             property.setHashA(hashA);
 
             if(reader.fail())
@@ -228,8 +243,9 @@ namespace DLS
                 return false;
             }
 
-            Hash::MD5 md( reader.getStringByPercentage(percent, FileReader::OPT::End) );
-            hashB = md.hexdigest();
+            //Hash::MD5 md( reader.getStringByPercentage(percent, FileReader::OPT::End) );
+            //hashB = md.hexdigest();
+            hashB = readerHexDigest(reader, percent, FileReader::OPT::End);
             property.setHashB(hashB);
 
             if(reader.fail())
@@ -315,8 +331,9 @@ namespace DLS
             ulong bytesPosition = reader.getBytesByPercentage(position);
             reader.setCurrentBytePosition(bytesPosition);
 
-            Hash::MD5 md( reader.getStringByPercentage(percent, FileReader::OPT::LastUsed) );
-            hashC = md.hexdigest();
+            //Hash::MD5 md( reader.getStringByPercentage(percent, FileReader::OPT::LastUsed) );
+            //hashC = md.hexdigest();
+            hashC = readerHexDigest(reader, percent, FileReader::OPT::LastUsed);
             property.setHashC(hashC);
 
             if(reader.fail())
@@ -469,6 +486,43 @@ namespace DLS
     ///////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////
     ///////////////////////////////////////////////////////////////////////////////////
+    ///
+    ///
+
+    inline std::string readerHexDigest(FileReader& reader, float percentage, FileReader::OPT::Position Options)
+    {
+        std::string rtn;
+        //! read percentage bytes
+        if(reader.getBytesByPercentage(percentage) > MAX_MEMORY_BUFFER_LIMIT)
+        {
+            const unsigned long sz = reader.size();
+            unsigned long chunk = MAX_MEMORY_BUFFER_LIMIT;
+            Hash::MD5 md;
+            bool firstRead = true;
+            while(chunk > 0)
+            {
+                std::string chunkData;
+                if(firstRead)
+                {
+                    chunkData = std::move(reader.getStringByBytes(chunk, Options));
+                    firstRead = false;
+                }
+                else
+                    chunkData = std::move(reader.getStringByBytes(chunk, FileReader::OPT::LastUsed));
+                md.update(chunkData.c_str(), chunkData.length());
+                chunk = sz - MAX_MEMORY_BUFFER_LIMIT;
+            }
+            md.finalize();
+            rtn = md.hexdigest();
+        }
+        else
+        {
+            Hash::MD5 md( reader.getStringByPercentage(percentage, FileReader::OPT::Start) );
+            rtn = md.hexdigest();
+        }
+
+        return rtn;
+    }
 
 }
 #endif // FILERULES_H

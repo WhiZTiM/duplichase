@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright September 2013 - December 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #include <QLabel>
 #include <QMessageBox>
 #include <QHBoxLayout>
@@ -105,7 +118,6 @@ bool DupScanActionWidget::loadResultsFromFile(const QString &fileName)
         progress.setMinimumDuration(1000);
 
         std::function<void(QString)> setNameCallBack =
-                //std::bind(&QProgressDialog::setLabelText, std::ref(progress), std::placeholders::_1);
                 [&](const QString& name) -> void
         {
             progress.setLabelText( "<qt><b>Verifying: </b></qt>" + name);
@@ -126,6 +138,8 @@ bool DupScanActionWidget::loadResultsFromFile(const QString &fileName)
 
         FilePropertySerializer::verifyAndFilter_inPlace(duplicates, vc);
 
+        if(progress.wasCanceled())
+            return false;
         int rtn = QMessageBox::information(this, tr("Write Back Changes"),
                                  tr("Do you wish to write back verified changes to the file"),
                                            QMessageBox::No | QMessageBox::Yes, QMessageBox::No);

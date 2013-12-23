@@ -1,20 +1,27 @@
+/*******************************************************************************************
+**  (C) Copyright October 2013 - November 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #include "extrafileproperty.hpp"
 #include <mutex>
 #include <QFileInfo>
 #include <QDateTime>
-/*
-ExtraFilePropertyThread::ExtraFilePropertyThread(QObject *parent) :
-    QThread(parent)
-{
-}
-*/
 
 ExtraPropertyHandler::ExtraPropertyHandler(int cacheSize, QObject *parent)
     : QObject(parent), delayTimeOut(10), cache(cacheSize)
 {
-    int maxCount = QThread::idealThreadCount() < 0 ? 4 : (QThread::idealThreadCount() + 3);
+    int maxCount = QThread::idealThreadCount() < 2 ? 2 : QThread::idealThreadCount();
+    threadPool.setExpiryTimeout(-1);
     threadPool.setMaxThreadCount( maxCount );
-    threadPool.setExpiryTimeout(90000);
 }
 
 void ExtraPropertyHandler::setMaxDelayTime(uint value)

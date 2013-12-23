@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright September 2013 - October 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #include "dupscansetupwidget.hpp"
 #include "useful_qt_functions.hpp"
 #include <QLabel>
@@ -212,10 +225,6 @@ void DupScanSetupWidget::modify_searchFolder()
     for(int i(0); i < s_pathsListWidget->count(); i++)
         oldList.append(s_pathsListWidget->item(i)->text());
 
-    if(checkAndShowOverLappingDialog(fpathList, oldList, this) ||
-            checkAndShowOverLappingDialog(oldList, fpathList, this))
-        return;
-
     int row = s_pathsListWidget->currentRow();
     delete s_pathsListWidget->currentItem();
     s_pathsListWidget->insertItem(row, fpathList.first());
@@ -238,10 +247,6 @@ void DupScanSetupWidget::modify_exclusionFolder()
     QStringList oldList;
     for(int i(0); i < e_pathsListWidget->count(); i++)
         oldList.append(e_pathsListWidget->item(i)->text());
-
-    if(checkAndShowOverLappingDialog(fpathList, oldList, this) ||
-            checkAndShowOverLappingDialog(oldList, fpathList, this))
-        return;
 
     int row = e_pathsListWidget->currentRow();
     delete e_pathsListWidget->currentItem();

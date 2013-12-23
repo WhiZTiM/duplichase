@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright September 2013 - November 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #include "dactionslistview.hpp"
 #include "ditemcontainer.hpp"
 #include "dupscan/modelview/ditem.hpp"
@@ -214,8 +227,16 @@ void DActionsListView::processGroupHeaderSelected(QModelIndex index)
 void DActionsListView::makeSelection(QModelIndexList indexes, QModelIndex ScrolledTo)
 {
     selectionModel()->clear();
+    bool CurrentIndexHasBeenSet = false;
     for(auto& index : indexes)
+    {
+        if(not CurrentIndexHasBeenSet)
+        {
+            selectionModel()->setCurrentIndex(index, QItemSelectionModel::NoUpdate);
+            CurrentIndexHasBeenSet = false;
+        }
         selectionModel()->select(index, QItemSelectionModel::Select);
+    }
     if(ScrolledTo.isValid())
         scrollTo(ScrolledTo);
 }
@@ -416,9 +437,14 @@ QSize DActionsListDelegate::sizeHint(const QStyleOptionViewItem &option, const Q
 
 QString DActionsListDelegate::fileNameAsString(const std::string &name) const
 {
+#ifdef Q_OS_WIN
+    return QString::fromStdString(boost::filesystem::path(name).string());
+#else
     return QString::fromStdString(boost::filesystem::path(name).native());
+#endif
 }
 
+//! REDUNDANT!
 QString DActionsListDelegate::fileSizeAsString(const ulong size) const
 {
     static const int dp = 2;
@@ -434,55 +460,6 @@ QString DActionsListDelegate::fileSizeAsString(const ulong size) const
         rtn = QString::number((size / 1073741824.0), f, dp) + " GB";
     return rtn;
 }
-
-
-void createDefaultExtensions()
-{
-    static bool k = true;
-    if(k)
-    {
-        ExtensionCategory c1;
-        c1.type = "video";
-        c1.extensionList << "3g2" << "3pg" << "asf" << "asx" << "avi" << "flv" <<
-                            "m4v" << "mp4" << "mov" << "mkv" << "mpg" << "vob" <<
-                            "xvid" << "wmv";
-        ExtensionFilterTypes::addExtensionCategory(c1);
-
-        c1.type = "audio";
-        c1.extensionList << "aif" << "pls" << "if" << "m3u" << "m4a" << "mid" <<
-                            "ogg" << "mpa" << "ra" << "wav" << "wma";
-        ExtensionFilterTypes::addExtensionCategory(c1);
-
-        c1.extensionList.clear();
-        c1.type = "document";
-        c1.extensionList << "doc" << "docx" << "log" << "msg" << "odt" << "pages"
-                         << "rtf" << "txt" << "tex" << "wpd" << "wps" << "pdf" << "epub"
-                         << "csv" << "dat" << "gbr" << "ged" << "ibooks" << "key"
-                         << "keychain" << "pps" << "ppt" << "pptx" << "sdf" << "tax2013"
-                         << "vcf" << "xls" << "xml" << "xlr" << "xlsx"
-                         << "3dm" << "3ds" << "max" << "collada" << "blend" << "obj";
-        ExtensionFilterTypes::addExtensionCategory(c1);
-
-        c1.extensionList.clear();
-        c1.type = "image";
-        c1.extensionList << "img" << "imgs" << "bmp" << "dds" << "gif" << "jpg" << "png"
-                         << "psd" << "pspimage" << "tga" << "thm" << "tif" << "tiff"
-                         << "yuv" << "wmf" << "ai" << "svg" << "eps" << "ps" << "jpeg" << "xcf";
-        ExtensionFilterTypes::addExtensionCategory(c1);
-
-        c1.extensionList.clear();
-        c1.type = "executable";
-        c1.extensionList << "exe" << "bat" << "sh" << "py" << "com" << "jar" << "wsf";
-        ExtensionFilterTypes::addExtensionCategory(c1);
-
-        c1.extensionList.clear();
-        c1.type = "custom";
-        ExtensionFilterTypes::addExtensionCategory(c1);
-
-        k = false;
-    }
-}
-
 
 ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     :   QWidget(parent)

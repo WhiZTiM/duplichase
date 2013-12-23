@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright September 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #ifndef DLS_FILERULES_H
 #define DLS_FILERULES_H
 #include "backend/include/rule_factory/filerules.hpp"
@@ -5,7 +18,7 @@
 
 namespace DLS
 {
-
+    //!Supposedly Supposed an abstraction for dynamic rules and and functions regarding it
     class dls_filerules
     {
         public:
@@ -17,7 +30,7 @@ namespace DLS
 
     //! Inline funtion that generates the rules in a static manner
     //! \NOTE FRANKLY THIS IS A VERY STUPID IMPLEMENTATION:
-    //! The next maintainer should please overhaul this crap
+    //! The next maintainer should please overhaul this crap ...that is, if He understands it
     inline std::vector< rule_facade<Path, FileProperty>* >
             makeBag01(RuleBag<Path, FileProperty>& rulebg)
     {
@@ -134,66 +147,7 @@ namespace DLS
         rulebg.AddRule(rules);
         rules.Clear();
 
-
         return V_RF;
     }
-
-    /*
-    inline void makeBagA(RuleBag<Path, FileProperty>& rulebg)
-    {
-        RuleSequence<Path, FileProperty> rules;
-
-        FR_by_size *rs1 = new FR_by_size(0, 1000, false);
-        FR_by_hashA *rh1 = new FR_by_hashA(100);
-        rules.AddRule(rs1);
-        rules.AddRule(rh1);
-        rulebg.AddRule(rules);
-        rules.Clear();
-
-
-        FR_by_size* rs2 = new FR_by_size(1000, 10000, true);
-        FR_by_hashA* rh2 = new FR_by_hashA(100);
-        rules.AddRule(rs2);
-        rules.AddRule(rh2);
-        rulebg.AddRule(rules);
-        rules.Clear();
-
-        FR_by_size* rs3 = new FR_by_size(10000, 100000, true);
-        FR_by_hashA* rh3 = new FR_by_hashA(100);
-        rules.AddRule(rs3);
-        rules.AddRule(rh3);
-        rulebg.AddRule(rules);
-        rules.Clear();
-
-        FR_by_size* rs4 = new FR_by_size(100000, 1000000, true);
-        FR_by_hashA* rh4 = new FR_by_hashA(30);
-        rules.AddRule(rs4);
-        rules.AddRule(rh4);
-        rulebg.AddRule(rules);
-        rules.Clear();
-
-        FR_by_size* rs5 = new FR_by_size(1000000, 30000000, true);
-        FR_by_hashA* rh5 = new FR_by_hashA(15);
-        rules.AddRule(rs5);
-        rules.AddRule(rh5);
-        rulebg.AddRule(rules);
-        rules.Clear();
-
-        FR_by_size* rs6 = new FR_by_size(30000000, 100000000, true);
-        FR_by_hashA* rh6 = new FR_by_hashA(13);
-        rules.AddRule(rs6);
-        rules.AddRule(rh6);
-        rulebg.AddRule(rules);
-        rules.Clear();
-
-        FR_by_size* rs7 = new FR_by_size(100000000, 500000000, true);
-        FR_by_hashA* rh7 = new FR_by_hashA(9);
-        rules.AddRule(rs7);
-        rules.AddRule(rh7);
-        rulebg.AddRule(rules);
-        rules.Clear();
-
-    } */
-
 }
 #endif // DLS_FILERULES_H

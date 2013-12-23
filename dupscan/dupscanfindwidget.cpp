@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright September 2013 - November 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #include "backend/include/duplicatefinder.hpp"
 #include "useful_qt_functions.hpp"
 #include "dupscanfindwidget.hpp"
@@ -27,11 +40,18 @@ Q_DECLARE_METATYPE(QVector<int>)
 Q_DECLARE_METATYPE(LOGType)
 //END
 
+class DupScanFindWorker : public QObject
+{
+    //
+};
+
+
 DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     QWidget(parent), viewLimit(20)
 {
     qRegisterMetaType<LOGType> ("LOGType");
     qRegisterMetaType<QVector<int>> ("QVector<int>");
+    qRegisterMetaType<DLS::FileProperty> ("DLS::FileProperty");
 
     scannerPaused = false;
     counterPaused = false;
@@ -85,11 +105,11 @@ DupScanFindWidget::DupScanFindWidget(QWidget *parent) :
     //item2->setSizeHint(QSize(item->sizeHint().width(), item->sizeHint().height() + 30) );
     //End Politics
     */
-    connect(this, SIGNAL(scanProgress(int)), this, SLOT(testUpdateSlot(int)));
-    connect(this, SIGNAL(filePropertyAddSignal(DLS::FileProperty,int)), this, SLOT(addDLSFileProperty(DLS::FileProperty,int)));
+    connect(this, SIGNAL(scanProgress(int)), this, SLOT(testUpdateSlot(int)), Qt::QueuedConnection);
+    connect(this, SIGNAL(filePropertyAddSignal(DLS::FileProperty,int)), this, SLOT(addDLSFileProperty(DLS::FileProperty,int)), Qt::QueuedConnection);
     //connect(this, SIGNAL(logMessage(LOGType,QString,QString)), this, SLOT(processLogMessage(LOGType,QString,QString)));
-    connect(this, SIGNAL(logMessage(LOGType,QString,QString)), &logFormatter, SLOT(formatAndWriteLogMessage(LOGType,QString,QString)));
-    connect(&logFormatter, SIGNAL(logMessage(QString)), this, SIGNAL(logMessage(QString)));
+    connect(this, SIGNAL(logMessage(LOGType,QString,QString)), &logFormatter, SLOT(formatAndWriteLogMessage(LOGType,QString,QString)), Qt::QueuedConnection);
+    connect(&logFormatter, SIGNAL(logMessage(QString)), this, SIGNAL(logMessage(QString)), Qt::QueuedConnection);
 
     //QTimer::singleShot(8000, this, SLOT(test()));
     setUpAuxilliaries();
@@ -105,6 +125,7 @@ void DupScanFindWidget::startScanner(const QStringList &scanFolders, const QStri
     }
     continueScanning();
     cancelSCanning = cancelTransversal = false;
+    std::cerr << "Main THREAD: " << (int) QThread::currentThreadId() << std::endl;
     scannerFuture = QtConcurrent::run(this, &DupScanFindWidget::startInternalScanner, scanFolders, exclusionFolders);
     processRunningtime.start();
 }
@@ -112,6 +133,7 @@ void DupScanFindWidget::startScanner(const QStringList &scanFolders, const QStri
 
 DLS::DuplicatesContainer DupScanFindWidget::getDuplicateContainer()
 {
+    std::cerr << "Main THREAD: " << (int) QThread::currentThreadId() << std::endl;
     return duplicates;
 }
 
@@ -258,9 +280,11 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
 
         DLS::DuplicateFinder dfCon(construct);
 
+        std::cerr << "WORKER THREAD main: " << (int) QThread::currentThreadId() << std::endl;
         //Lambda function for checking if COunts Prepared
         auto transversalWatch = [&] () -> bool
             {
+                std::cerr << "WORKER THREAD Transversal: " << (int) QThread::currentThreadId() << std::endl;
                 logMessage(LOGType::DLSCoreInfo, "DupLichaSe-Core", "initializing Ahead-Of-Time File Counting");
                 try
                 {
@@ -383,8 +407,8 @@ void DupScanFindWidget::setUpAuxilliaries()
     superSpeedLabel->setTextFormat(Qt::RichText);
     superSpeedLabel->setText(label);
     superSpeedLabel->setAlignment(Qt::AlignCenter);
-    connect(this, SIGNAL(finishedPathTransversal(bool,ulong)), this, SLOT(processFinshedPathTransversal(bool,ulong)));
-    connect(this, SIGNAL(finishedScanning(bool)), this, SLOT(processFinshedScanning(bool)));
+    connect(this, SIGNAL(finishedPathTransversal(bool,ulong)), this, SLOT(processFinshedPathTransversal(bool,ulong)), Qt::QueuedConnection);
+    connect(this, SIGNAL(finishedScanning(bool)), this, SLOT(processFinshedScanning(bool)), Qt::QueuedConnection);
 }
 
 

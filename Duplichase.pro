@@ -13,6 +13,21 @@ QMAKE_CXXFLAGS += -std=c++11
 TARGET = Duplichase
 TEMPLATE = app
 
+#Actually, these are my Non-conventional platform specific dependencies...
+#Change it to fit yours... just make sure you link with "libboost_fulesystem" and "libboost_system"
+win32 {
+    INCLUDEPATH += C:/libs/boost
+    LIBS += \
+        C:/libs/boost/bin.v2/libs/filesystem/build/gcc-mingw-4.8.0/debug/link-static/threading-multi/libboost_filesystem-mgw48-mt-d-1_54.a \
+        C:/libs/boost/bin.v2/libs/system/build/gcc-mingw-4.8.0/debug/link-static/threading-multi/libboost_system-mgw48-mt-d-1_54.a
+}
+
+!win32 {
+    LIBS += \
+        -L/usr/lib/boost/lib \
+        -lboost_system \
+        -lboost_filesystem
+}
 
 SOURCES += \
 	backend/src/directory_elements/directory_iterator.cpp \
@@ -92,32 +107,9 @@ HEADERS  += \
     dupscan/modelview/filepropertyserializer.hpp \
     dupscan/modelview/filepropertystoremanagement.hpp
 
-#FORMS    += \
-#    UI/mainwindow.ui \
-#    UI/rloggerdialog.ui
-
-#OTHER_FILES += \
-#    QML/main.qml \
-#    UI/style/style.qss \
-#    QML/refresh.qml
-
-#RESOURCES += \
-#    UI/metaobj.qrc \
-#    QML/qmlobj.qrc \
-#    UI/icon_set.qrc
-
-win32 {
-    LIBS += \
-        C:/libs/boost/bin.v2/libs/filesystem/build/gcc-mingw-4.8.0/debug/link-static/threading-multi/libboost_filesystem-mgw48-mt-d-1_54.a \
-        C:/libs/boost/bin.v2/libs/system/build/gcc-mingw-4.8.0/debug/link-static/threading-multi/libboost_system-mgw48-mt-d-1_54.a
-}
-
-!win32 {
-    LIBS += \
-        -L/usr/lib/boost/lib \
-        -lboost_system \
-        -lboost_filesystem
-}
+OTHER_FILES += \
+    resources/categoryTypeExplanation.txt
+    resources/categoryType.txt
 
 FORMS += \
     dlsmainwindow.ui \

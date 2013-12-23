@@ -1,6 +1,26 @@
+/*******************************************************************************************
+**  (C) Copyright August 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #ifndef MD5_HASH_H
 #define MD5_HASH_H
 
+#include <string>
+#include <iostream>
+
+namespace DLS
+{
+namespace Hash
+{
 /* MD5
  converted to C++ class by Frank Thilo (thilo@unix-ag.org)
  for bzflag (http://www.bzflag.org)
@@ -33,8 +53,6 @@ documentation and/or software.
 
 */
 
-#include <string>
-#include <iostream>
 
 
 // a small class for calculating MD5 hashes of strings or byte arrays
@@ -47,10 +65,6 @@ documentation and/or software.
 //      MD5(std::string).hexdigest()
 //
 // assumes that char is 8 bit and int is 32 bit
-namespace DLS
-{
-namespace Hash
-{
 
 class MD5
 {

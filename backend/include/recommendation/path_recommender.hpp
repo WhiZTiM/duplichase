@@ -1,3 +1,16 @@
+/*******************************************************************************************
+**  (C) Copyright September 2013 - November 2013 by
+**  @author: Ibrahim Timothy Onogu {WhiZTiM}
+**  @email: <ionogu@acm.org>
+**
+**	Provided this copyright notice appears on all derived works;
+**  Use, modification and distribution are subject to the Boost Software License,
+**  Version 1.0. (See accompanying file LICENSE_1_0.txt or copy at
+**  http://www.boost.org/LICENSE_1_0.txt).
+**
+**  Project DupLichaSe...2013
+**  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
+********************************************************************************************/
 #ifndef PATH_RECOMMENDER_HXX
 #define PATH_RECOMMENDER_HXX
 #include "backend/include/directory_elements/simple_directory_tree.hpp"
@@ -25,6 +38,9 @@ namespace DLS
             void lowerOutgoing() const;
             void lowerIncoming() const;
 
+            void setOutgoing(long long value) const;
+            void setIncoming(long long value) const;
+
             void used(bool) const;
             bool used() const;
         private:
@@ -47,6 +63,9 @@ namespace DLS
             long long getIncoming(const std::string&) const;
             long long getOutgoing(const std::string&) const;
             bool lastgetSuccessful() const;
+
+            void resetToZero();
+            void clear();
         private:
             std::unordered_map<std::string, Tree::DirectoryElement*> mStringElem;
             Tree::DirectoryElement* rootElement = nullptr;
@@ -74,6 +93,9 @@ namespace DLS
             long long getOutgoingIndex(const std::string& path) const;
             long long getKeepingWeight(const std::string& path) const { return getOutgoingIndex(path); }
             long long getDeletionWeight(const std::string& path)const { return getIncomingIndex(path); }
+
+            void resetAllToZero();
+            void clear();
 
             virtual ~PathRecommender();
         protected:
