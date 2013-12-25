@@ -65,6 +65,11 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     connect(actionsButton, SIGNAL(selectGroupDeletes()), view, SLOT(selectDeletesGroup()));
     connect(actionsButton, SIGNAL(selectNextGroupKeeps()), view, SLOT(selectNextKeepsGroup()));
     connect(actionsButton, SIGNAL(selectNextGroupDeletes()), view, SLOT(selectNextDeletesGroup()));
+    connect(actionsButton, SIGNAL(filterByPath(QString)), model, SLOT(filterModelByPath(QString)));
+    connect(actionsButton, SIGNAL(filterByRegex(QRegExp)), model, SLOT(filterModelByRegex(QRegExp)));
+    connect(actionsButton, SIGNAL(filterBySize(ulong,ulong)), model, SLOT(filterModelBySize(ulong,ulong)));
+    connect(actionsButton, SIGNAL(filterByExtension(QStringList)), model, SLOT(filterModelByExtension(QStringList)));
+    connect(actionsButton, SIGNAL(statusBarErrorMessage(QString)), this, SIGNAL(statusBarMessage(QString)));
 
     connect(model, SIGNAL(logMessage(QString)), this, SIGNAL(logMessage(QString)));
     connect(model, SIGNAL(scrollTo(QModelIndex)), view, SLOT(scrollToIndex(QModelIndex)));

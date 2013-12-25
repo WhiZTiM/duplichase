@@ -11,9 +11,9 @@
 **  Project DupLichaSe...2013
 **  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
 ********************************************************************************************/
-#include "dactionslistview.hpp"
-#include "ditemcontainer.hpp"
+#include "dupscan/modelview/filterwidgets.hpp"
 #include "dupscan/modelview/ditem.hpp"
+#include "dactionslistview.hpp"
 #include <boost/filesystem.hpp>
 #include <QMenu>
 #include <QCursor>
@@ -472,6 +472,7 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     markings_pushButton             = new QPushButton("Markings", this);
     autoSelection_pushButton        = new QPushButton("&Auto Selection", this);
     commit_pushButton               = new QPushButton("&Commit", this);
+    filterDialog                    = new FilterDialog(this);
 
     sort_pushButton->setCheckable(true);
     markings_pushButton->setCheckable(true);
@@ -509,7 +510,7 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     markingsContextMenu.addAction("Unmark All &Keeps", this, SIGNAL(unmarkAllKeeps()));
     markingsContextMenu.addAction("Unmark all &Deletes", this, SIGNAL(unmarkAllDeletes()));
 
-    filterContextMenu.addAction("Not Yet Available")->setEnabled(false);
+    //filterContextMenu.addAction("Not Yet Available")->setEnabled(false);
 
     connect(reset_pushButton, SIGNAL(clicked()), this, SIGNAL(resetRequested()));
     connect(commit_pushButton, SIGNAL(clicked()), this, SIGNAL(commitRequested()));
@@ -526,6 +527,11 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
             SLOT(markingsContextMenuAboutToHide()));
     connect(&filterContextMenu, SIGNAL(aboutToHide()), this,
             SLOT(filterContextMenuAboutToHide()));
+    connect(filterDialog, SIGNAL(aboutToHide()), this, SLOT(filterContextMenuAboutToHide()));
+    connect(filterDialog, SIGNAL(filterByExtension(QStringList)), this, SIGNAL(filterByExtension(QStringList)));
+    connect(filterDialog, SIGNAL(filterByPath(QString)), this, SIGNAL(filterByPath(QString)));
+    connect(filterDialog, SIGNAL(filterByRegex(QRegExp)), this, SIGNAL(filterByRegex(QRegExp)));
+    connect(filterDialog, SIGNAL(filterBySize(ulong,ulong)), this, SIGNAL(filterBySize(ulong,ulong)));
 }
 
 void ActionsButtonPanel::sortByDescendingFileSize()
@@ -559,12 +565,17 @@ void ActionsButtonPanel::processMarkingsClicked()
 void ActionsButtonPanel::filterContextMenuClicked()
 {
     filter_pushButton->setChecked( true );
-    filterContextMenu.exec( QCursor::pos() );
+    //filterContextMenu.exec( QCursor::pos() );
+    QPoint point = QCursor::pos();
+    point.setY(point.y() - 80);
+    filterDialog->setGeometry( QRect(point, filterDialog->sizeHint()) );
+    filterDialog->show();
 }
 
 void ActionsButtonPanel::filterContextMenuAboutToHide()
 {
-    filter_pushButton->setChecked(false);
+    //filter_pushButton->setChecked(false);
+    filter_pushButton->setChecked( false );
 }
 
 void ActionsButtonPanel::sortContextMenuAboutToHide()

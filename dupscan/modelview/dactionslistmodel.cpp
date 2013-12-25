@@ -14,6 +14,8 @@
 #include "dactionslistmodel.hpp"
 #include "dupscan/safe_deletion.hpp"
 #include <QtConcurrent/QtConcurrent>
+#include <boost/algorithm/string.hpp>
+#include <QApplication>
 #include <QStringList>
 #include <QVector>
 #include <QPair>
@@ -50,10 +52,16 @@ void DActionsListModel::resetViewItems()
 
     viewIt.clear();
     QLinkedList<DItem>::iterator pIterHeader = dItems.begin();
+    int mk = 0;
     for(QLinkedList<DItem>::iterator iter = dItems.begin(); iter != dItems.end(); iter++)
     {
         if(iter->isGroupHeader)
+        {
             pIterHeader = iter;
+            mk = 0;
+        }
+        else
+            iter->header.itemCount(++mk);
 
         iData kItem;
         kItem.header = pIterHeader;
@@ -66,10 +74,14 @@ void DActionsListModel::resetViewItems()
 
 void DActionsListModel::filterModelByExtension(QStringList extensionList)
 {
+    std::unordered_set<std::string> extensionSet;
+    for(auto& extension : extensionList)
+        extensionSet.insert(extension.toLower().toStdString());
     scanDataViewAndremoveIndex_if(TRemoveFrom::View,
                                   [&](int indx)
     {
-        return !extensionList.contains( QString::fromStdString( viewIt[indx].item->property.getFileExtension() ));
+        return !(extensionSet.find( boost::to_lower_copy( viewIt[indx].item->property.getFileExtension()) )
+                == extensionSet.end());
     }
     );
 
@@ -110,17 +122,30 @@ void DActionsListModel::filterModelBySize(ulong min, ulong max)
                                   [&](int indx) -> bool
     {
         unsigned long fsize = viewIt[indx].item->property.getSize();
-        return (min <= fsize) && (fsize <= max);
+        return !((min <= fsize) && (fsize <= max));
     }
     );
 }
 
-void DActionsListModel::filterModelByPath(QString parentPath)
+void DActionsListModel::filterModelByRegex(QRegExp regex)
 {
+    if(!regex.isValid())
+        return;
     scanDataViewAndremoveIndex_if(TRemoveFrom::View,
                                   [&](int indx)
     {
-        return QString::fromStdString( viewIt[indx].item->property.getFilePath() ).contains( parentPath );
+        return !regex.exactMatch( QString::fromStdString( viewIt[indx].item->property.getFilePath() ) );
+    });
+}
+
+void DActionsListModel::filterModelByPath(QString filePath)
+{
+    if(filePath.isEmpty())
+        return;
+    scanDataViewAndremoveIndex_if(TRemoveFrom::View,
+                                  [&](int indx)
+    {
+        return ! QString::fromStdString(viewIt[indx].item->property.getFilePath()).contains(filePath, Qt::CaseInsensitive) ;
     });
 }
 
@@ -624,6 +649,9 @@ DLS::DuplicatesContainer DActionsListModel::getCurrentDuplicates() const
 
 inline int DActionsListModel::scanDataViewAndremoveIndex_if(TRemoveFrom removeType, std::function<bool (int)> Callable)
 {
+    if(AnyProcessRunning)
+        return 0;
+    AnyProcessRunning.store(true);
     QModelIndex parent;
     int t_count = 0;
     int rtn = 0;
@@ -632,7 +660,7 @@ inline int DActionsListModel::scanDataViewAndremoveIndex_if(TRemoveFrom removeTy
         const int index = i - t_count;
         if(viewIt[index].item == viewIt[index].header)  //if we are dealing with headers
             continue;
-        if(not Callable(i))
+        if(not Callable(index))
             continue;
 
         ++t_count;
@@ -701,9 +729,12 @@ inline int DActionsListModel::scanDataViewAndremoveIndex_if(TRemoveFrom removeTy
                        " This is a SERIOUS LOGIC ERROR!");
 
             beginRemoveRows(parent, headerIndex, headerIndex);
+            //++t_count;
             viewIt.removeAt( headerIndex );
             endRemoveRows();
         }
+        QApplication::processEvents(QEventLoop::AllEvents, 10);
     }
+    AnyProcessRunning.store(false);
     return rtn;
 }

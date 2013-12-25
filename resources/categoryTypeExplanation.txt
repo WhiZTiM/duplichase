@@ -1,0 +1,16 @@
+VERSION 1										---> Compulsory
+												---> Empty Line necessary
+CATEGORY 1										---> (A string) AND (a Number)
+2												---> Number of Files in this category
+23433											---> Size of Files
+2rkjlfnskjfnk23k23jknfwjk						---> HashA of the File
+2rkjlfnskjfnk23k23jknfwjk						---> HashB of the file
+C:\Users\makese									---> --> First File in this category
+3425 0											---> --> (KeepingWeight) AND (DeletionWeight)
+B:\werwe\wewe\wr32\4sg							---> --> Second File in this category
+0 24323423423443235								---> --> (KeepingWeight) AND (DeletionWeight)
+												---> EMPTY line
+CATEGORY 2										---> Next category
+. . .
+. . 
+												---> This document must end with an Empty Line!

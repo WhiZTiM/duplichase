@@ -73,7 +73,8 @@ public slots:
     void sortModel(Qt::SortOrder sortOrder = Qt::DescendingOrder);
     void filterModelByExtension(QStringList extensionList);
     void filterModelBySize(ulong min, ulong max);
-    void filterModelByPath(QString parentPath );
+    void filterModelByPath(QString filePath);
+    void filterModelByRegex(QRegExp regex);
     void resetViewItems();
 
     void commitMarkings();

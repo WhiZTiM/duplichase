@@ -14,14 +14,17 @@
 #ifndef DACTIONSLISTVIEW_HPP
 #define DACTIONSLISTVIEW_HPP
 
-#include <QListView>
 #include <QStyledItemDelegate>
-#include <QMenu>
+#include <QListView>
+#include <QRegExp>
 #include <QAction>
+#include <QDialog>
+#include <QMenu>
 
 QT_BEGIN_NAMESPACE
 class QPushButton;
 QT_END_NAMESPACE
+class FilterDialog;
 
 class DActionsListDelegate : public QStyledItemDelegate
 {
@@ -105,7 +108,6 @@ public:
 
 signals:
     void sortingRequested(Qt::SortOrder);
-    void filteringRequested(QStringList);
     void resetRequested();
     void commitRequested();
     void unmarkAllKeeps();
@@ -118,6 +120,13 @@ signals:
     void selectGroupDeletes();
     void selectNextGroupKeeps();
     void selectNextGroupDeletes();
+
+    void filterByExtension(QStringList);
+    void filterBySize(ulong min, ulong max);
+    void filterByPath(QString);
+    void filterByRegex(QRegExp);
+    void statusBarErrorMessage(QString);
+
 public slots:
 
 private slots:
@@ -145,16 +154,7 @@ private:
     QMenu autoSelectionContextMenu;
     QMenu markingsContextMenu;
     QMenu filterContextMenu;
+    FilterDialog* filterDialog;
 };
 
-/*
-class FilterDialogAndManager : public QDialog
-{
-    Q_OBJECT
-public:
-    FilterDialogAndManager();
-signals:
-
-};
-*/
 #endif // DACTIONSLISTVIEW_HPP

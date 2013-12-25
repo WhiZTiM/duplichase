@@ -35,6 +35,7 @@ public:
 
 signals:
     void logMessage(QString);
+    void statusBarMessage(QString);
 
 public slots:
     void setDuplicates(DLS::DuplicatesContainer duplicates);

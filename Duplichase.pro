@@ -62,7 +62,8 @@ SOURCES += \
     dupscan/safe_deletion.cpp \
     dupscan/modelview/ditemcontainer.cpp \
     dupscan/modelview/filepropertyserializer.cpp \
-    dupscan/modelview/filepropertystoremanagement.cpp
+    dupscan/modelview/filepropertystoremanagement.cpp \
+    dupscan/modelview/filterwidgets.cpp
 
 HEADERS  += \
 	backend/include/container_helpers/fp_holders.hpp \
@@ -105,7 +106,8 @@ HEADERS  += \
     dglobals.hpp \
     dupscan/modelview/ditemcontainer.hpp \
     dupscan/modelview/filepropertyserializer.hpp \
-    dupscan/modelview/filepropertystoremanagement.hpp
+    dupscan/modelview/filepropertystoremanagement.hpp \
+    dupscan/modelview/filterwidgets.hpp
 
 OTHER_FILES += \
     resources/categoryTypeExplanation.txt
