@@ -59,6 +59,7 @@ private:
     bool validatePathInput();
     void signalTypesSelection();
     void fireErrorMessageBox(const QString &msg);
+    unsigned long sizzleValue(bool &isGood, FileSizeInputLineEdit *fslEdit, const QString &tag);
     void setUpCompleter();
 };
 
@@ -66,14 +67,20 @@ class FileSizeInputLineEdit : public QWidget
 {
     Q_OBJECT
 public:
-    FileSizeInputLineEdit(QWidget* parent = nullptr);
+    enum class SM { good, underflow, overflow, bad };
+    FileSizeInputLineEdit(QWidget* parent = nullptr, int minimumInputLimit = 2048);
     bool isValid();
+    inline SM status()
+        { return st; }
+
     unsigned long value();
 public slots:
 
 private:
     QLineEdit* lineEdit;
     QRegExp regexp;
+    SM st = SM::good;
+    unsigned long minlimit;
 };
 
 #endif // FILTERWIDGETS_HPP

@@ -38,8 +38,8 @@ public:
         None = 0x0,                     //! 0000
         View = 0x1,                     //! 0001
         Model= 0x3,                     //! 0011
-        FileSystem_toRecycleBin = 0xB,  //! 0111
-        FileSystem_permanently = 0x15   //! 1011
+        FileSystem_toRecycleBin = 0x7,  //! 0111
+        FileSystem_permanently = 0xB    //! 1011
     };
 
 
@@ -126,6 +126,8 @@ private:
     QString formatForLog(const QString& str);
     DLS::DuplicatesContainer iDataListToDuplicatesContainer(const QList<iData>& list) const;
     int scanDataViewAndremoveIndex_if(TRemoveFrom removeType, std::function<bool(int)> Callable);
+    int scanDataRangeAndRemoveIndex_if(QList<int> indexRange, TRemoveFrom removeType,
+                                       std::function<bool(int)> Callable);
 };
 
 inline DActionsListModel::TRemoveFrom operator & (DActionsListModel::TRemoveFrom a, DActionsListModel::TRemoveFrom b)

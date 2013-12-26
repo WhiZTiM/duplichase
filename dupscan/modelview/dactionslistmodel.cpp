@@ -29,6 +29,9 @@ Q_DECLARE_METATYPE(DItem)
 
 //#define OLD_MODEL
 
+QString deleteFileToRecycleBin(const QString& filePath);
+QString deleteFilePermanently(const QString& filePath);
+
 DActionsListModel::DActionsListModel(QObject *parent) :
     QAbstractListModel(parent), AnyProcessRunning(false)
 {
@@ -61,7 +64,7 @@ void DActionsListModel::resetViewItems()
             mk = 0;
         }
         else
-            iter->header.itemCount(++mk);
+            pIterHeader->header.itemCount(++mk);
 
         iData kItem;
         kItem.header = pIterHeader;
@@ -352,10 +355,22 @@ void DActionsListModel::deleteFilesNow(QModelIndexList indexes)
 //! TODO: Adapt this function to the newly created \fn scanDataViewAndRemoveIndex_if()
 void DActionsListModel::p_deleteFilesNow(QModelIndexList indexes, bool RemoveFromModel, bool MoveToTrash)
 {
+
+    QList<int> indexList;
+    for(int i = 0; i < indexList.size(); i++)
+        indexList.append( indexes[i].row() );
+    std::function<bool(int)> deleters = [](int){ return true; };
+
+    TRemoveFrom removalType = RemoveFromModel ?
+                (MoveToTrash ? TRemoveFrom::FileSystem_toRecycleBin : TRemoveFrom::Model)
+              : TRemoveFrom::View;
+
+    scanDataRangeAndRemoveIndex_if(indexList, removalType, deleters);
+
+    /*
     QModelIndex parent;
     qSort(indexes.begin(), indexes.end(),
           [](const QModelIndex& lhs, const QModelIndex& rhs) { return lhs.row() < rhs.row(); });
-
     int t_count = 0;
     for(auto const& i : indexes)
     {
@@ -407,7 +422,7 @@ void DActionsListModel::p_deleteFilesNow(QModelIndexList indexes, bool RemoveFro
             endRemoveRows();
         }
     }
-    //!
+    //!*/
 }
 
 void DActionsListModel::commitMarkings()
@@ -647,94 +662,116 @@ DLS::DuplicatesContainer DActionsListModel::getCurrentDuplicates() const
     return iDataListToDuplicatesContainer( viewIt );
 }
 
+#define TESTOUTTA_RANGE
+
 inline int DActionsListModel::scanDataViewAndremoveIndex_if(TRemoveFrom removeType, std::function<bool (int)> Callable)
 {
-    if(AnyProcessRunning)
+    QList<int> wholeList;
+    for(int i=0; i < viewIt.size(); i++)
+        wholeList.append(i);
+
+    return scanDataRangeAndRemoveIndex_if(wholeList, removeType, Callable);
+}
+
+int DActionsListModel::scanDataRangeAndRemoveIndex_if(QList<int> indexRange, TRemoveFrom removeType,
+                                                      std::function<bool (int)> Callable)
+{
+    if(removeType == TRemoveFrom::None)
         return 0;
+
+    if(AnyProcessRunning.load())
+    {
+        emit statusBarMessage(QString("Please Be Patient With the Current Operation"));
+        return 0;
+    }
+
     AnyProcessRunning.store(true);
     QModelIndex parent;
-    int t_count = 0;
-    int rtn = 0;
-    for(int i = 0; i < viewIt.size(); i++)
+    //Sort the model first
+    qSort(indexRange);
+
+    const int rangeLimit = indexRange.size();
+    const int ten_percent = (rangeLimit / 10) > 0 ? (rangeLimit / 10) : 1;
+    int t_track = 0;
+    for(int i = 0; i < rangeLimit; i++)
     {
-        const int index = i - t_count;
-        if(viewIt[index].item == viewIt[index].header)  //if we are dealing with headers
+        const int index = i - t_track;
+        const int idx = indexRange[index];
+
+        if(viewIt[idx].item == viewIt[idx].header)
             continue;
-        if(not Callable(index))
+        else if(not Callable(idx))
             continue;
 
-        ++t_count;
 
-        beginRemoveRows( parent, index, index );
-        const QString filePath(QString::fromStdString( viewIt[index].item->property.getFilePath() ));
-
-        //! +Treat Model Removal
+        beginRemoveRows( parent, idx, idx );
+        const QString filePath(QString::fromStdString( viewIt[idx].item->property.getFilePath() ));
         if((removeType & TRemoveFrom::Model) == TRemoveFrom::Model)
-            dItems.erase( viewIt[index].item );
-
-        viewIt[index].header->header.itemCount( viewIt.at(index).header->header.itemCount() - 1 );
-        bool removeHeader = false;
-        if(viewIt[index].header->header.itemCount() < 1)
         {
-        //  *Treat Model header Removal
-            if((removeType & TRemoveFrom::Model) == TRemoveFrom::Model)
-                dItems.erase( viewIt[index].header );
-            removeHeader = true;
+            dItems.erase( viewIt[idx].item );
         }
-
-        //! +Treat View Removal
         if((removeType & TRemoveFrom::View) == TRemoveFrom::View)
         {
-            ++rtn;
-            viewIt.removeAt( index );
+            viewIt[idx].header->header.itemCount( viewIt[idx].header->header.itemCount() - 1 );
+            viewIt.removeAt( idx );
+            ++t_track;
         }
-
         endRemoveRows();
 
-        //! +Treat removal to Recycle bin/Trash
-        if((removeType & TRemoveFrom::FileSystem_toRecycleBin) == TRemoveFrom::FileSystem_toRecycleBin )
-        {
-            QString deletionReply = DeletionAgent::toTrash( filePath );
-            if(!deletionReply.isEmpty())
-            {
-                QString ddkk(tr("Problem With \"") + filePath + "\" " + deletionReply);
-                emit logMessage( formatForLog( ddkk ) );
-            }
-            else
-            {
-                QString ddkk(tr("The File \"") + filePath + tr("\" was SUCSESSFULLY deleted"));
-                emit logMessage( formatForLog( ddkk ) );
-            }
-        }
-        //! +Treat Permanent Removal
-        else if((removeType & TRemoveFrom::FileSystem_permanently) == TRemoveFrom::FileSystem_permanently)
-        {
-            bool s = QFile::remove( filePath );
-            if(not s)
-            {
-                QString s_m(tr("Problem With \"") + filePath + tr(" Failed to permanently delete!"));
-                emit logMessage(formatForLog( s_m ));
-            }
-            else
-            {
-                QString s_m(tr("The File \"") + filePath + tr("\" has been permanently deleted"));
-                emit logMessage( formatForLog( s_m ) );
-            }
-        }
 
-        if(removeHeader)
+        if((removeType & TRemoveFrom::FileSystem_toRecycleBin) == TRemoveFrom::FileSystem_toRecycleBin)
         {
-            const int headerIndex = index - 1;
-            Q_ASSERT_X(viewIt[headerIndex].item == viewIt[headerIndex].header, "ItemRemmoval",
-                       " This is a SERIOUS LOGIC ERROR!");
+            emit logMessage( formatForLog( deleteFileToRecycleBin( filePath ) ) );
+        }
+        if((removeType & TRemoveFrom::FileSystem_permanently) == TRemoveFrom::FileSystem_permanently)
+        {
+            emit logMessage( formatForLog( deleteFilePermanently( filePath ) ));
+        }
+        if((i % ten_percent) == 0)  //update at multiples of ten_percent only
+            QApplication::processEvents(QEventLoop::AllEvents, 50);
+    }
 
-            beginRemoveRows(parent, headerIndex, headerIndex);
-            //++t_count;
-            viewIt.removeAt( headerIndex );
+    //Deal With empty headers
+    const int h_rangeLimit = indexRange.size() - t_track;
+    int ht_track = 0;
+    for(int i = 0; i < h_rangeLimit; i++)
+    {
+        const int index = i - ht_track;
+        const int idx = indexRange[index];
+        if((viewIt[idx].item == viewIt[idx].header) && (viewIt[idx].header->header.itemCount() < 1))
+        {
+            beginRemoveRows(parent, idx, idx);
+            if((removeType & TRemoveFrom::Model) == TRemoveFrom::Model)
+            {
+                dItems.erase( viewIt[idx].item );
+            }
+            if((removeType & TRemoveFrom::View) == TRemoveFrom::View)
+            {
+                viewIt.removeAt( idx );
+                ++ht_track;
+            }
             endRemoveRows();
         }
-        QApplication::processEvents(QEventLoop::AllEvents, 10);
     }
+
     AnyProcessRunning.store(false);
-    return rtn;
+    return t_track;
+}
+
+QString deleteFileToRecycleBin(const QString& filePath)
+{
+    QString deletionReply = DeletionAgent::toTrash( filePath );
+    if(!deletionReply.isEmpty())
+        return QString(QObject::tr("Problem With \"") + filePath + "\" " + deletionReply);
+    return QString(QObject::tr("The File \"") + filePath + QObject::tr("\" was SUCSESSFULLY deleted"));
+}
+
+QString deleteFilePermanently(const QString& filePath)
+{
+    bool s = QFile::remove( filePath );
+    if(not s)
+        return QString(QObject::tr("Problem With \"") + filePath +
+                       QObject::tr(" Failed to permanently delete!"));
+    return QString(QObject::tr("The File \"") + filePath +
+                   QObject::tr("\" has been permanently deleted"));
 }

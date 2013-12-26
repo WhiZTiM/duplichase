@@ -74,7 +74,6 @@ void DLSMainWindow::setupMainWindowElements()
     dpActionWidget->actionsButtonPanel()->setVisible(false);
     ui->dupScanParameterFrame->layout()->addWidget( dpActionWidget->actionsButtonPanel() );
 
-    connect(ui->action_About_Qt, SIGNAL(triggered()), qApp, SLOT(aboutQt()));
     connect(ui->stage1_setupRadioButton, SIGNAL(clicked()), this, SLOT(stageRadioClickEvent()));
     connect(ui->stage2_FindRadioButton, SIGNAL(clicked()), this, SLOT(stageRadioClickEvent()));
     connect(ui->stage3_ActionsRadioButton, SIGNAL(clicked()), this, SLOT(stageRadioClickEvent()));

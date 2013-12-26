@@ -494,7 +494,7 @@
      <x>0</x>
      <y>0</y>
      <width>870</width>
-     <height>23</height>
+     <height>21</height>
     </rect>
    </property>
    <widget class="QMenu" name="menu_File">
@@ -522,7 +522,6 @@
     <addaction name="separator"/>
     <addaction name="action_Report_A_Problem"/>
     <addaction name="action_About"/>
-    <addaction name="action_About_Qt"/>
    </widget>
    <addaction name="menu_File"/>
    <addaction name="menu_Program"/>
@@ -562,6 +561,9 @@
    <property name="text">
     <string>&amp;Preferences</string>
    </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;NOT&lt;/span&gt; yet available . . . scheduled to be in&lt;/p&gt;&lt;p&gt;versions 1.6+ and above!!&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+   </property>
   </action>
   <action name="action_Exit">
    <property name="text">
@@ -580,6 +582,9 @@
    </property>
    <property name="text">
     <string>&amp;DupLichaSe DUPScan</string>
+   </property>
+   <property name="toolTip">
+    <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;DupLichaSe DUPScan &lt;/span&gt;is currenttly the only module available to &lt;span style=&quot; font-weight:600;&quot;&gt;DupLichaSe&lt;/span&gt;.&lt;/p&gt;&lt;p&gt;From newer versions, other modules are expected to come in such as &lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;+DupLichaSe DUPFuzzyScan&lt;/span&gt; - Data Fuzzy Scanner for consumer content like music, pictures and videos.&lt;/p&gt;&lt;p&gt;&lt;span style=&quot; font-weight:600;&quot;&gt;+DupLichaSe DUPTagScan&lt;/span&gt; - Tag Fuzzy Scanner for various files with tags including multimedia files.&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
    </property>
   </action>
   <action name="action_About_Qt">

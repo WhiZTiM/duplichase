@@ -154,18 +154,22 @@ bool FilterDialog::validateSizeInputs()
 {
     if(!sizeRangeGroupBox->isChecked())
         return true;
+
+    bool ok = false;
+    auto min = sizzleValue(ok, minFileSizeLineEdit, tr("Minimum File Size"));
+    if(not ok)
+        return false;
+    min = sizzleValue(ok, maxFileSizeLineEdit, tr("Maximum File Size"));
+    if(not ok)
+        return false;
+
     if(minFileSizeLineEdit->value() > maxFileSizeLineEdit->value())
     {
-        fireErrorMessageBox(tr("<qt>C'mon!!! <b>Either</b> Minimum File Size is less Than Maximum File Size!<br />"
-                               "<b>Or</b> you have an outrageous size above DupLichaSe's current capacity</qt>"));
+        fireErrorMessageBox(tr("<qt><b>C'mon!!!</b> Minimum File Size is <b>less</b> than "
+                               "Maximum File Size!<br /><b>That's just too wrong!</qt>"));
         return false;
     }
-    if(maxFileSizeLineEdit->value() < 2000)
-    {
-        fireErrorMessageBox(tr("<qt>Ooopsie!! DupLichaSe cannot yet handle such Maximum file sizes effectively"
-                               "<br />::Choose between <b> 2KB and 4GB</b></qt>"));
-        return false;
-    }
+
     return true;
 }
 
@@ -240,6 +244,36 @@ void FilterDialog::fireErrorMessageBox(const QString& msg)
     show();
 }
 
+unsigned long FilterDialog::sizzleValue(bool& isGood, FileSizeInputLineEdit* fslEdit, const QString& tag)
+{
+    unsigned long rtn = fslEdit->value();
+    if(fslEdit->status() == FileSizeInputLineEdit::SM::good)
+    {
+        isGood = true;
+    }
+    else if(fslEdit->status() == FileSizeInputLineEdit::SM::bad)
+    {
+        fireErrorMessageBox(tr("<qt><b>") + tag +
+                            tr("</b> has an invalid input</qt>"));
+        isGood = false;
+    }
+    else if(fslEdit->status() == FileSizeInputLineEdit::SM::underflow)
+    {
+        fireErrorMessageBox(tr("<qt><b>Oopsie!!! ") + tag +
+                            tr("</b>'s value is less than DupLichaSe's current capacity!<br />"
+                               "::Please type in a Value between <b>2KB and 4GB</b></qt>"));
+        isGood = false;
+    }
+    else if(fslEdit->status() == FileSizeInputLineEdit::SM::overflow)
+    {
+        fireErrorMessageBox(tr("<qt><b>Oopsie!!! ") + tag +
+                            tr("</b>'s value is greater than DupLichaSe's current capacity!<br />"
+                               "::Please type in a Value between <b>2KB and 4GB</b></qt>"));
+        isGood = false;
+    }
+    return rtn;
+}
+
 void FilterDialog::setUpCompleter()
 {
     QCompleter* completer = new QCompleter(this);
@@ -251,13 +285,15 @@ void FilterDialog::setUpCompleter()
 }
 
 
+
+
 ////////////////////////////////////////////////////////////////////
 /// \brief FileSizeInputLineEdit::FileSizeInputLineEdit
 /// \param parent
 ///////////////////////////////////////////////////////////////////////
 
-FileSizeInputLineEdit::FileSizeInputLineEdit(QWidget *parent)
-    : QWidget(parent)
+FileSizeInputLineEdit::FileSizeInputLineEdit(QWidget *parent, int minimumInputLimit)
+    : QWidget(parent), minlimit(minimumInputLimit)
 {
     setLayout(new QVBoxLayout);
     lineEdit = new QLineEdit(this);
@@ -272,11 +308,18 @@ FileSizeInputLineEdit::FileSizeInputLineEdit(QWidget *parent)
 
 unsigned long FileSizeInputLineEdit::value()
 {
+    st = SM::good;
     QString text(lineEdit->text());
     if(text.isEmpty())
+    {
+        st = SM::bad;
         return 0;
+    }
     if(!regexp.exactMatch(text))
+    {
+        st = SM::bad;
         return 0;
+    }
     QStringList capturedTexts( regexp.capturedTexts() );
 
     unsigned long rtn = 0;
@@ -289,7 +332,10 @@ unsigned long FileSizeInputLineEdit::value()
         {
             cap1 = capturedTexts[i].toFloat(&ok);
             if(not ok)
+            {
+                st = SM::overflow;
                 return 0;
+            }
         }
         else if(i == 2)
             prefix = capturedTexts[i];
@@ -303,35 +349,46 @@ unsigned long FileSizeInputLineEdit::value()
     //The magic numbers you see here are calculated by dividing the Limit of 4GB --> 4294967295
     // with the real value(converting to bytes) of the input
     do{
-        if(prefix == "" || prefix == "B")
+        if(prefix == "B")
         {
             rtn = static_cast<unsigned long>(cap1);
             break;
         }
-        else if(prefix == "KB" || prefix == "K")
+        else if(prefix == "" || prefix == "KB" || prefix == "K") //Default string is KB
         {
             if (static_cast<unsigned long>(cap1) > 4194303)
+            {
+                st = SM::overflow;
                 return 0;
+            }
             rtn = static_cast<unsigned long>(cap1) * 1024;
             break;
         }
         else if (prefix == "MB" || prefix == "M")
         {
             if (static_cast<unsigned long>(cap1) > 4095)
+            {
+                st = SM::overflow;
                 return 0;
+            }
             rtn = static_cast<unsigned long>(cap1) * 1024 * 1024;
             break;
         }
         else if (prefix == "GB" || prefix == "G")
         {
             if (static_cast<unsigned long>(cap1) > 4)
+            {
+                st = SM::overflow;
                 return 0;
+            }
             rtn = static_cast<unsigned long>(cap1) * 1024 * 1024 * 1024;
             break;
         }
         break;
     }while(false);
 
+    if(rtn < minlimit)
+        st = SM::underflow;
     return rtn;
 }
 
