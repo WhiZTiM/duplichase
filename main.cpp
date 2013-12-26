@@ -27,8 +27,8 @@
  */
 int main(int argc, char* argv[])
 {
-    std::ios::sync_with_stdio(false);
     QApplication App(argc, argv);
+    std::ios::sync_with_stdio(false);
     QApplication::setApplicationVersion(PROGRAM_VERSION_FULL_STRING);
     QApplication::setApplicationDisplayName("DupLichaSe");
     QApplication::setApplicationName("DupLichaSe");
@@ -37,7 +37,7 @@ int main(int argc, char* argv[])
 
     QString fileName;
     const QStringList arguments = App.arguments();
-    if(arguments.size() > 3)
+    if(arguments.size() > 2)
     {
         std::cerr << QObject::tr("Invalid Argumentss passed!\n"
                      "NOTE: Only One parameter Needed; and that is"
@@ -45,9 +45,9 @@ int main(int argc, char* argv[])
                      "NOTE: Start the Program without arguments!\n").toStdString();
         return -1;
     }
-    else if(arguments.size() == 3)
+    else if(arguments.size() == 2)
     {
-        fileName = arguments.at(2);
+        fileName = arguments.at(1);
         if(!QFile::exists(fileName))
         {
             QString msg(QObject::tr("Failed to access: \"") + fileName +

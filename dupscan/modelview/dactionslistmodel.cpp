@@ -27,8 +27,6 @@
 Q_DECLARE_METATYPE(DLS::FileProperty)
 Q_DECLARE_METATYPE(DItem)
 
-//#define OLD_MODEL
-
 QString deleteFileToRecycleBin(const QString& filePath);
 QString deleteFilePermanently(const QString& filePath);
 
@@ -88,35 +86,6 @@ void DActionsListModel::filterModelByExtension(QStringList extensionList)
     }
     );
 
-    /*
-    beginResetModel();
-    bool last_iteration_was_group_header = false;
-
-    QList<iData> filteredViewIt;
-    last_iteration_was_group_header = false;
-    for(int i = 0; i < viewIt.size(); i++)
-    {
-
-        if(viewIt[i].item->isGroupHeader)
-        {
-            if(last_iteration_was_group_header)
-                filteredViewIt.removeLast();
-            filteredViewIt.push_back(viewIt[i]);
-            last_iteration_was_group_header = true;
-        }
-        else
-        {
-            QString extension(QString::fromStdString( viewIt[i].item->property.getFileExtension() ));
-            if( extensionList.contains(extension, Qt::CaseInsensitive) )
-            {
-                filteredViewIt.push_back( viewIt[i] );
-                last_iteration_was_group_header = false;
-            }
-        }
-    }
-    filteredViewIt.swap( viewIt );
-    endResetModel();
-    */
 }
 
 void DActionsListModel::filterModelBySize(ulong min, ulong max)
@@ -357,7 +326,7 @@ void DActionsListModel::p_deleteFilesNow(QModelIndexList indexes, bool RemoveFro
 {
 
     QList<int> indexList;
-    for(int i = 0; i < indexList.size(); i++)
+    for(int i = 0; i < indexes.size(); i++)
         indexList.append( indexes[i].row() );
     std::function<bool(int)> deleters = [](int){ return true; };
 
