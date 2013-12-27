@@ -15,10 +15,12 @@
 #include <QFileDialog>
 #include <QListWidget>
 #include <QHBoxLayout>
+#include <QMessageBox>
 #include <QStackedLayout>
+#include <QDesktopServices>
+#include "dglobals.hpp"
 #include "dlsmainwindow.hpp"
 #include "ui_dlsmainwindow.h"
-#include "dglobals.hpp"
 #include "dupscan/dialogs/aboutdialog.hpp"
 #include "dupscan/dupscansetupwidget.hpp"
 #include "dupscan/dupscanfindwidget.hpp"
@@ -92,6 +94,9 @@ void DLSMainWindow::setupMainWindowElements()
 
     connect(ui->action_Save_DupLichaSe_File, SIGNAL(triggered()), this, SLOT(saveResultsToFile()));
     connect(ui->action_Open_DupLichaSe_File, SIGNAL(triggered()), this, SLOT(loadResultsFromFile()));
+
+    connect(ui->action_Help, SIGNAL(triggered()), this, SLOT(openHelpFile()));
+    connect(ui->action_Report_A_Problem, SIGNAL(triggered()), this, SLOT(action_reportAProblem()));
 
     processStart_Suspend();
 }
@@ -256,5 +261,24 @@ void DLSMainWindow::loadResultsFromFile(QString openPath)
     {
         ui->stage3_ActionsRadioButton->setChecked(true);
         stageRadioClickEvent();
+    }
+}
+
+void DLSMainWindow::action_reportAProblem()
+{
+    QDesktopServices::openUrl(QUrl("https://github.com/WhiZTiM/duplichase/issues"));
+}
+
+void DLSMainWindow::openHelpFile()
+{
+    QString runPath = QApplication::applicationDirPath();
+    runPath += QDir::separator() + QString("help-manual.pdf");
+    QString fUrl = "file://" + runPath;
+    //QUrl url("file:")
+
+    if(not QDesktopServices::openUrl(fUrl))
+    {
+        QMessageBox::critical(this, tr("DupLichaSe - Help"),
+                              tr("Sorry, the help manual was not found on this System."));
     }
 }

@@ -259,15 +259,12 @@ bool DActionsListView::viewportEvent(QEvent *event)
     bool rtn = true;
     if(event->type() == QEvent::MouseButtonPress)
     {
-        std::cerr << "\nAccepted Mouse Release" << std::endl;
         QMouseEvent* mouseEvent = static_cast<QMouseEvent*>(event);
         if(mouseEvent->button() == Qt::RightButton)
         {
             QRect rect(mouseEvent->globalPos(), contextMenu.sizeHint());
             contextMenu.setGeometry( rect );
-            std::cerr << "KeepActionBB: " << keepAction->isChecked() << std::endl;
             prepareContextMenu();
-            std::cerr << "KeepActionAA: " << keepAction->isChecked() << std::endl;
             contextMenu.show();
         }
     }

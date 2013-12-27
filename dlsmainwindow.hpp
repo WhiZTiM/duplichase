@@ -42,6 +42,8 @@ public slots:
     void stageRadioClickEvent();
     void processStart_Suspend();
     void aboutDuplichasePopup();
+    void openHelpFile();
+    void action_reportAProblem();
     void loadResultsFromFile(QString openPath);
     void startScanner();
     void StopScanner();

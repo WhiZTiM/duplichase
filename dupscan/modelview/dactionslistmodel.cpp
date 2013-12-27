@@ -81,7 +81,7 @@ void DActionsListModel::filterModelByExtension(QStringList extensionList)
     scanDataViewAndremoveIndex_if(TRemoveFrom::View,
                                   [&](int indx)
     {
-        return !(extensionSet.find( boost::to_lower_copy( viewIt[indx].item->property.getFileExtension()) )
+        return (extensionSet.find( boost::to_lower_copy( viewIt[indx].item->property.getFileExtension()) )
                 == extensionSet.end());
     }
     );
@@ -335,63 +335,6 @@ void DActionsListModel::p_deleteFilesNow(QModelIndexList indexes, bool RemoveFro
               : TRemoveFrom::View;
 
     scanDataRangeAndRemoveIndex_if(indexList, removalType, deleters);
-
-    /*
-    QModelIndex parent;
-    qSort(indexes.begin(), indexes.end(),
-          [](const QModelIndex& lhs, const QModelIndex& rhs) { return lhs.row() < rhs.row(); });
-    int t_count = 0;
-    for(auto const& i : indexes)
-    {
-        const int index = i.row() - t_count;
-        if(viewIt[index].item == viewIt[index].header)  //if we are dealing with headers
-            continue;
-        ++t_count;
-
-        beginRemoveRows( parent, index, index );
-        const QString filePath(QString::fromStdString( viewIt[index].item->property.getFilePath() ));
-
-        if(RemoveFromModel)
-            dItems.erase( viewIt[index].item );
-
-        viewIt[index].header->header.itemCount( viewIt.at(index).header->header.itemCount() - 1 );
-        bool removeHeader = false;
-        if(viewIt[index].header->header.itemCount() < 1)
-        {
-            if(RemoveFromModel)
-                dItems.erase( viewIt[index].header );
-            removeHeader = true;
-        }
-        viewIt.removeAt( index );
-        endRemoveRows();
-
-        if( RemoveFromModel && MoveToTrash )
-        {
-            QString deletionReply = DeletionAgent::toTrash( filePath );
-            if(!deletionReply.isEmpty())
-            {
-                QString ddkk("Problem With \"" + filePath + "\" " + deletionReply);
-                emit logMessage( formatForLog( ddkk ) );
-            }
-            else
-            {
-                QString ddkk("The File \"" + filePath + "\" was SUCSESSFULLY deleted");
-                emit logMessage( formatForLog( ddkk ) );
-            }
-        }
-
-        if(removeHeader)
-        {
-            const int headerIndex = index - 1;
-            Q_ASSERT_X(viewIt[headerIndex].item == viewIt[headerIndex].header, "ItemRemmoval",
-                       " This is a SERIOUS LOGIC ERROR!");
-
-            beginRemoveRows(parent, headerIndex, headerIndex);
-            viewIt.removeAt( headerIndex );
-            endRemoveRows();
-        }
-    }
-    //!*/
 }
 
 void DActionsListModel::commitMarkings()
@@ -642,6 +585,17 @@ inline int DActionsListModel::scanDataViewAndremoveIndex_if(TRemoveFrom removeTy
     return scanDataRangeAndRemoveIndex_if(wholeList, removeType, Callable);
 }
 
+/*! This algorithm runs at O(2N + Mlog(M)) ...where M == \a indexRange.size() and N = \a viewIt.size()
+//! First, is to sort the index in ascending order then (1st LOOP) pick each index in \a indexRange and
+//! pass it to \a Callable(); if Callable returns true... it goes ahead to remove the index according to
+//! \a removeType...
+//!
+//! Some removals will cause One item to be left in the group Header, and we do not want that
+//! So, we scan and remove that item(2nd LOOP)
+//!
+//! Finally, we scan and remove empty Headers
+//!
+//!*/
 int DActionsListModel::scanDataRangeAndRemoveIndex_if(QList<int> indexRange, TRemoveFrom removeType,
                                                       std::function<bool (int)> Callable)
 {
@@ -690,23 +644,51 @@ int DActionsListModel::scanDataRangeAndRemoveIndex_if(QList<int> indexRange, TRe
 
         if((removeType & TRemoveFrom::FileSystem_toRecycleBin) == TRemoveFrom::FileSystem_toRecycleBin)
         {
+            recommender.setWeights( filePath.toStdString(), std::string() );
             emit logMessage( formatForLog( deleteFileToRecycleBin( filePath ) ) );
         }
         if((removeType & TRemoveFrom::FileSystem_permanently) == TRemoveFrom::FileSystem_permanently)
         {
+            recommender.setWeights( filePath.toStdString(), std::string() );
             emit logMessage( formatForLog( deleteFilePermanently( filePath ) ));
         }
         if((i % ten_percent) == 0)  //update at multiples of ten_percent only
             QApplication::processEvents(QEventLoop::AllEvents, 50);
     }
 
+
+    //Deal with single last entries;
+    const int s_rangeLimit = viewIt.size();
+    int s_track = 0;
+    for(int i = 0; i < s_rangeLimit; i++)
+    {
+        const int idx = i - s_track;
+        if(viewIt[idx].item == viewIt[idx].header)
+            continue;
+        if((viewIt[idx].header->header.itemCount() < 2))
+        {
+            beginRemoveRows(parent, idx, idx);
+            viewIt[idx].header->header.itemCount(0);
+            if((removeType & TRemoveFrom::Model) == TRemoveFrom::Model)
+            {
+                dItems.erase( viewIt[idx].item );
+            }
+            if((removeType & TRemoveFrom::View) == TRemoveFrom::View)
+            {
+                viewIt.removeAt( idx );
+                ++s_track;
+            }
+            endRemoveRows();
+        }
+    }
+
+
     //Deal With empty headers
-    const int h_rangeLimit = indexRange.size() - t_track;
+    const int h_rangeLimit = viewIt.size();
     int ht_track = 0;
     for(int i = 0; i < h_rangeLimit; i++)
     {
-        const int index = i - ht_track;
-        const int idx = indexRange[index];
+        const int idx = i - ht_track;
         if((viewIt[idx].item == viewIt[idx].header) && (viewIt[idx].header->header.itemCount() < 1))
         {
             beginRemoveRows(parent, idx, idx);
