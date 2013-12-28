@@ -25,6 +25,7 @@ FileReader::FileReader(const std::string& path)
         _file_size = _file.tellg();
     else
         _file_size = 0;
+    _file_path  = path;
     _reset();
 }
 

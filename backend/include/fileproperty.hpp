@@ -58,7 +58,7 @@ namespace DLS
             {
                 std::string::size_type st = _filePath.rfind('.');
                 if(st == std::string::npos) return "";
-                return std::string("." + _filePath.substr(st));
+                return std::string( _filePath.substr(st));
             }
 
         private:

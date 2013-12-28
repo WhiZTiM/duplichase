@@ -495,8 +495,9 @@ namespace DLS
         //! read percentage bytes
         if(reader.getBytesByPercentage(percentage) > MAX_MEMORY_BUFFER_LIMIT)
         {
-            const unsigned long sz = reader.size();
+            const unsigned long sz = reader.getBytesByPercentage(percentage);
             unsigned long chunk = MAX_MEMORY_BUFFER_LIMIT;
+            unsigned long chunkReadSoFar = 0;
             Hash::MD5 md;
             bool firstRead = true;
             while(chunk > 0)
@@ -510,7 +511,12 @@ namespace DLS
                 else
                     chunkData = std::move(reader.getStringByBytes(chunk, FileReader::OPT::LastUsed));
                 md.update(chunkData.c_str(), chunkData.length());
-                chunk = sz - MAX_MEMORY_BUFFER_LIMIT;
+                if(chunkData.empty())
+                    return std::string();
+
+                chunkReadSoFar += chunk;
+                if(sz - chunkReadSoFar < MAX_MEMORY_BUFFER_LIMIT)
+                    chunk = sz - MAX_MEMORY_BUFFER_LIMIT;
             }
             md.finalize();
             rtn = md.hexdigest();

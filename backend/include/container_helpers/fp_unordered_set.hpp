@@ -117,7 +117,8 @@ namespace DLS
     {
     public:
         bool operator () (const FileProperty& fp1, const FileProperty& fp2) const
-        { return fp1.getHashA() == fp2.getHashA(); }
+        { return (fp1.getHashA() == fp2.getHashA()) &&
+                    (fp1.getSize() == fp2.getSize()); }
     };
 
 
@@ -134,7 +135,9 @@ namespace DLS
     {
     public:
         bool operator () (const FileProperty& fp1, const FileProperty& fp2) const
-        { return fp1.getHashB() == fp2.getHashB(); }
+        { return (fp1.getHashB() == fp2.getHashB()) &&
+                    (fp1.getHashA() == fp2.getHashA()) &&
+                    (fp1.getSize() == fp2.getSize()); }
     };
 
 

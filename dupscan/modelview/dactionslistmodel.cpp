@@ -77,14 +77,14 @@ void DActionsListModel::filterModelByExtension(QStringList extensionList)
 {
     std::unordered_set<std::string> extensionSet;
     for(auto& extension : extensionList)
-        extensionSet.insert(extension.toLower().toStdString());
+        extensionSet.insert('.' + extension.toLower().toStdString());
     scanDataViewAndremoveIndex_if(TRemoveFrom::View,
-                                  [&](int indx)
+                                  ([&](int indx) -> bool
     {
         return (extensionSet.find( boost::to_lower_copy( viewIt[indx].item->property.getFileExtension()) )
                 == extensionSet.end());
     }
-    );
+    ));
 
 }
 

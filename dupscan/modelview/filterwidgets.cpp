@@ -193,7 +193,7 @@ bool FilterDialog::validatePathInput()
 
 bool FilterDialog::validateRegexInput()
 {
-    if(regexGroupBox->isChecked())
+    if(!regexGroupBox->isChecked())
         return true;
     QString exp(regexLineEdit->text());
     if(exp.isEmpty())

@@ -272,11 +272,11 @@ void DLSMainWindow::action_reportAProblem()
 void DLSMainWindow::openHelpFile()
 {
     QString runPath = QApplication::applicationDirPath();
-    runPath += QDir::separator() + QString("help-manual.pdf");
+    runPath += '/' + QString("help-manual.pdf");
     QString fUrl = "file://" + runPath;
     //QUrl url("file:")
 
-    if(not QDesktopServices::openUrl(fUrl))
+    if(not QDesktopServices::openUrl(QUrl::fromLocalFile(fUrl)))
     {
         QMessageBox::critical(this, tr("DupLichaSe - Help"),
                               tr("Sorry, the help manual was not found on this System."));
