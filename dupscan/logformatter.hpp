@@ -36,6 +36,8 @@ signals:
     void logMessage(QString);
 public slots:
     void formatAndWriteLogMessage(LOGType logType, QString header, QString body);
+private:
+    QString lastMessage;
 };
 
 #endif // LOGFORMATTER_HPP

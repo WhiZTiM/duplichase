@@ -14,17 +14,25 @@
 #include "backend/include/filereader.hpp"
 #include <cmath>
 #include <cstring>
+#include <algorithm>
 
 using namespace DLS;
 
+bool isLessThan4GB(const std::string& path);
+
 //constructor
 FileReader::FileReader(const std::string& path)
+    : _file_size(0)
 {
-    _file.open(path, std::ios::in | std::ios::ate);
+    _file.open(path, std::ios::in | std::ios::ate | std::ios::binary);
     if(_file)
-        _file_size = _file.tellg();
-    else
-        _file_size = 0;
+    {
+        if(!isLessThan4GB(path))
+            _file.setstate(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
+        else
+            _file_size = _file.tellg();
+    }
+
     _file_path  = path;
     _reset();
 }
@@ -135,7 +143,7 @@ std::string FileReader::getStringByBytes(unsigned long bytes, OPT::Position posi
             _file.clear();
         }
         //check that bytes is not a relative valid range.... set ios::badbit state for illegal attempt
-        if( static_cast<unsigned long>( _file.tellg() ) - bytes < 0)
+        if( (long long)(static_cast<unsigned long>( _file.tellg() ) - bytes) < 0)
         {
             _file.setstate(std::ios::badbit);
             return std::string();
@@ -157,6 +165,12 @@ std::string FileReader::getStringByBytes(unsigned long bytes, OPT::Position posi
 
     if(buffSize == 0)   //Very evil stuff occured
     {
+        _file.setstate(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
+        return "";
+    }
+    if(buffSize > _bufferSize)
+    {
+        ulong stz = _file.tellg();
         _file.setstate(std::ios::badbit | std::ios::failbit | std::ios::eofbit);
         return "";
     }
@@ -204,7 +218,9 @@ std::string FileReader::getStringByBytes(unsigned long bytes, OPT::Position posi
         else
             _tell_g = _file_size;
 
-        return std::string( rtn.rbegin(), rtn.rend() );
+        std::reverse(rtn.begin(), rtn.end());
+        return rtn;
+        //return std::string( rtn.rbegin(), rtn.rend() );
     }
 
     if(!_file.eof())
@@ -247,3 +263,52 @@ FileReader::~FileReader()
 {
     //nothing inferred
 }
+
+#ifdef QT_CORE_LIB
+#include <QtGlobal>
+#include <QFile>
+#ifdef Q_OS_WIN
+    #include <windows.h>
+#else
+    #ifdef Q_OS_LINUX
+    #include <unistd.h>
+    #else
+    #error Only Windows and Unix have been implemented , please Implement a routine that checks \
+    for files greater than 4GB
+    #endif
+#endif
+
+bool isLessThan4GB(const std::string& path)
+{
+    QFile file(QString::fromStdString(path));
+    if(file.size() > 4294967295)
+        return false;
+    return true;
+    /*
+    HANDLE hFile = CreateFileA(path.c_str(), GENERIC_READ, FILE_SHARE_READ, NULL, OPEN_EXISTING,
+                               FILE_ATTRIBUTE_NORMAL, NULL);
+    if(hFile == INVALID_HANDLE_VALUE)
+        return false;
+    LARGE_INTEGER l_size = 0;
+    if(!GetFileSizeEx(hFile, &size))
+    {
+        CloseHandle(hFile);
+        return false;
+    }
+    CloseHandle(hFile);
+    std::int64_t size = l_size.QuadPart;
+    if(size > 4294967295)
+        return false;
+    return true;
+
+    WIN32_FIND_DATAW data;
+    std::wstring w_path(path.begin(), path.end());
+    HANDLE h = FindFirstFileW(w_path.c_str(), &data);
+    if(h == INVALID_HANDLE_VALUE)
+        return false;
+    */
+}
+#else
+#error This part needs Qt LIBRARY.. else, define a routine that checks for files greater than \
+    4GB on x86 systems as above
+#endif

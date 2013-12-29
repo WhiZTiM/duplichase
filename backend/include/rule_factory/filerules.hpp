@@ -516,7 +516,7 @@ namespace DLS
 
                 chunkReadSoFar += chunk;
                 if(sz - chunkReadSoFar < MAX_MEMORY_BUFFER_LIMIT)
-                    chunk = sz - MAX_MEMORY_BUFFER_LIMIT;
+                    chunk = sz - chunkReadSoFar;
             }
             md.finalize();
             rtn = md.hexdigest();

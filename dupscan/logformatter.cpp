@@ -24,6 +24,10 @@ void LogFormatter::formatAndWriteLogMessage(LOGType logtype, QString header, QSt
      *and was confirmed unto us by them that heard him;
      */
 
+    if(body == lastMessage)
+        return;
+    lastMessage = body;
+
     const QString s = body.isEmpty() ? "" : ": ";
     static const QString K_Bold =           "<b>";
     static const QString K_Italics =        "<i>";
