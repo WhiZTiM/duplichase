@@ -618,8 +618,11 @@ int DActionsListModel::scanDataRangeAndRemoveIndex_if(QList<int> indexRange, TRe
     int t_track = 0;
     for(int i = 0; i < rangeLimit; i++)
     {
+        /* Remove This! during code cleanup! The assumption of this code fails in some scenerios
         const int index = i - t_track;
         const int idx = indexRange[index];
+        */
+        const int idx = indexRange[i] - t_track;
 
         if(viewIt[idx].item == viewIt[idx].header)
             continue;

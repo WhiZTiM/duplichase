@@ -20,6 +20,7 @@ AboutDialog::AboutDialog(QWidget *parent) :
 AboutDialog::~AboutDialog()
 {
     delete ui;
+
 }
 
 void AboutDialog::setAboutQtText()

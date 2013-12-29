@@ -65,7 +65,8 @@ QString FilePropertyFromDiskStore::parseAndReturnSuccess()
         }
 
         DLS::ptrVEC_FileProperty group(new DLS::VEC_FileProperty( std::move( section.second ) ) );
-        duplicates.insert( group );
+        if(not group->empty())
+            duplicates.insert( group );
     }
 }
 
