@@ -12,6 +12,7 @@
 **  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
 ********************************************************************************************/
 #include "backend/include/duplicatefinder.hpp"
+#include "dupscan/modelview/filepropertyserializer.hpp"
 #include "useful_qt_functions.hpp"
 #include "dupscanfindwidget.hpp"
 #include <functional>
@@ -30,6 +31,7 @@
 #include <QStaticText>
 #include <QMutexLocker>
 #include <QStackedLayout>
+#include <QStandardPaths>
 #include <QStyledItemDelegate>
 #include <QStyleOptionViewItem>
 #include <QtConcurrent/QtConcurrent>
@@ -349,6 +351,7 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
         }
         //updateScanProgressSignal(dfCon.totalCount());
         duplicates = dfCon.getDuplicatesContainer();
+        attempt_serialization_to_disk();
 
         transversalFuture.waitForFinished();
         emit finishedScanning(true);
@@ -401,7 +404,7 @@ void DupScanFindWidget::setUpAuxilliaries()
             "<h3>"
             "<br /> RealTime Updates has been disabled for this mode to Work"
             "<br /> Updating You realtime is at the expense of CPU time"
-            "<br /> Disabling realtime Updates adds at least 20% increase"
+            "<br /> Disabling realtime Updates reduces scan time by up to 20%"
             "<br /> If you want realtime updates, please disable Super Speed Scan"
             "</h3>";
     superSpeedLabel->setTextFormat(Qt::RichText);
@@ -409,6 +412,29 @@ void DupScanFindWidget::setUpAuxilliaries()
     superSpeedLabel->setAlignment(Qt::AlignCenter);
     connect(this, SIGNAL(finishedPathTransversal(bool,ulong)), this, SLOT(processFinshedPathTransversal(bool,ulong)), Qt::QueuedConnection);
     connect(this, SIGNAL(finishedScanning(bool)), this, SLOT(processFinshedScanning(bool)), Qt::QueuedConnection);
+}
+
+void DupScanFindWidget::attempt_serialization_to_disk()
+{
+    if(duplicates.empty())
+        return;
+    QStringList documentsPath = QStandardPaths::standardLocations(QStandardPaths::DocumentsLocation);
+    if(documentsPath.isEmpty())
+        return;
+    QString tempPath = documentsPath.first();
+
+    boost::filesystem::path pt(tempPath.toStdString());
+    tempPath = QString::fromStdString(pt.generic_string());
+    tempPath += "/duplichase_las_scan.dlsr";
+
+    FilePropertySerializer serializer;
+    if(serializer.toDisk(tempPath, duplicates))
+    {
+        logMessage(LOGType::Info, "Scan Results Backed UP to:", tempPath);
+        return;
+    }
+    logMessage(LOGType::Error, "Failed to Back-Up Scan Results to:", tempPath);
+
 }
 
 

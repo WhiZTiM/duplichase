@@ -130,6 +130,7 @@ private:
     bool startInternalScanner(const QStringList scanFolders, const QStringList exclusionFolders);
     void updateScanProgressSignal(unsigned long value);
     void setUpAuxilliaries();
+    void attempt_serialization_to_disk();
 
     DLS::DuplicatesContainer duplicates;
     LogFormatter logFormatter;

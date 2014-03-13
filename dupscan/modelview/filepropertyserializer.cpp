@@ -39,30 +39,6 @@ bool FilePropertySerializer::verifyAndFilter_inPlace(DLS::DuplicatesContainer &d
     int pr = 0, prTotal = duplicates.size();
     for(auto& vecs : duplicates)
     {
-        /*
-        using iterator_type = decltype((*vecs).begin());
-        QList<decltype((*vecs).begin())> unitRemovals;
-        for(auto iter = (*vecs).begin(); iter != (*vecs).end(); iter++)
-        {
-            QString fileName = QString::fromStdString( (*iter).getFilePath() );
-            vc.CurrentFileCallback( fileName );
-            if(vc.isTaskCancelledCallback())
-            {
-                vc.PercentageProgressCallback(100);
-                return false;
-            }
-            if(! QFile::exists( fileName ) )
-                unitRemovals.push_back(iter);
-        }
-
-        for(int i=0; i < unitRemovals.size(); i++)
-        {
-            (*vecs).erase( unitRemovals[i] );
-        }
-
-        if((*vecs).size() < 2)           //Theres no point keeping One or Zero items in the list....
-            groupRemovals.push_back(vecs);
-        ?*/
         QList<int> unitRemovals;
         const int sz = vecs->size();
         for(int i = 0; i < sz; i++)
