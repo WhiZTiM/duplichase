@@ -318,46 +318,55 @@ bool DupScanFindWidget::startInternalScanner(const QStringList scanFolders, cons
         transversalFuture = QtConcurrent::run(transversalWatch);
 
         int temp_counter = 0;
-        while(!dfCon.endend())
+
+        //try
         {
-            if(cancelSCanning)
+            while(!dfCon.endend())
             {
-                logMessage(LOGType::DLSCoreWarning, "DupLichaSe-Core",
-                           "Duplicate Finder Subsystem was shutdown by user");
-                dfCon.endCounting( true );
-                break;
-            }
+                if(cancelSCanning)
+                {
+                    logMessage(LOGType::DLSCoreWarning, "DupLichaSe-Core",
+                               "Duplicate Finder Subsystem was shutdown by user");
+                    dfCon.endCounting( true );
+                    break;
+                }
 
-            filePropertyAddSignal( dfCon.nextFile(), dfCon.ruleDepth() );
-            QString error( QString::fromStdString( dfCon.getCurrentError() ) );
+                filePropertyAddSignal( dfCon.nextFile(), dfCon.ruleDepth() );
+                QString error( QString::fromStdString( dfCon.getCurrentError() ) );
 
-            if(scannerSleepInterval)
-                QThread::msleep(scannerSleepInterval);
-            if(!error.isEmpty())
-            {
-                logMessage(LOGType::DLSCoreWarning, "DupLichaSe-Core: Scanner Subsystem message", error);
-                continue;
+                if(scannerSleepInterval)
+                    QThread::msleep(scannerSleepInterval);
+                if(!error.isEmpty())
+                {
+                    logMessage(LOGType::DLSCoreWarning, "DupLichaSe-Core: Scanner Subsystem message", error);
+                    continue;
+                }
+                if(++temp_counter > 10)     //Fire after every 10 rounds
+                {
+                    updateScanProgressSignal(dfCon.getCount());
+                    temp_counter = 0;
+                }
+                if(scannerPaused)
+                {
+                    QMutexLocker locker(&scannerMutex);
+                    scannerWaitCondition.wait(&scannerMutex);
+                }
             }
-            if(++temp_counter > 10)     //Fire after every 10 rounds
-            {
-                updateScanProgressSignal(dfCon.getCount());
-                temp_counter = 0;
-            }
-            if(scannerPaused)
-            {
-                QMutexLocker locker(&scannerMutex);
-                scannerWaitCondition.wait(&scannerMutex);
-            }
+            //updateScanProgressSignal(dfCon.totalCount());
+            duplicates = dfCon.getDuplicatesContainer();
+            attempt_serialization_to_disk();
+
+            transversalFuture.waitForFinished();
+            emit finishedScanning(true);
+            return true;
         }
-        //updateScanProgressSignal(dfCon.totalCount());
-        duplicates = dfCon.getDuplicatesContainer();
-        attempt_serialization_to_disk();
-
-        transversalFuture.waitForFinished();
-        emit finishedScanning(true);
-        return true;
 
     }
+    catch(std::exception& e)
+    {
+        std::cout << "\n" << e.what() << std::endl;
+    }
+
     catch(...)
     {
         logMessage(LOGType::DLSCoreError, "DupLiChaSe-Core::FATAL ERROR", "An uncaught EXCEPTION was thrown from the Scanning Subsystem!");
@@ -425,7 +434,7 @@ void DupScanFindWidget::attempt_serialization_to_disk()
 
     boost::filesystem::path pt(tempPath.toStdString());
     tempPath = QString::fromStdString(pt.generic_string());
-    tempPath += "/duplichase_las_scan.dlsr";
+    tempPath += "/duplichase_last_scan.dlsr";
 
     FilePropertySerializer serializer;
     if(serializer.toDisk(tempPath, duplicates))

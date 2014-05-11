@@ -20,6 +20,15 @@ using namespace DLS;
 
 bool isLessThan4GB(const std::string& path);
 
+template<typename T>
+void reverseSequence_inplace(T& seq)
+{
+    const ::size_t len = seq.size();
+    const ::size_t mid = len / 2;
+    for(::size_t i = 0; i < mid; i++)
+        std::swap(seq[i], seq[len - 1 - i]);
+}
+
 //constructor
 FileReader::FileReader(const std::string& path)
     : _file_size(0)
@@ -219,8 +228,8 @@ std::string FileReader::getStringByBytes(unsigned long bytes, OPT::Position posi
             _tell_g = _file_size;
 
         std::reverse(rtn.begin(), rtn.end());
+        //reverseSequence_inplace(rtn);
         return rtn;
-        //return std::string( rtn.rbegin(), rtn.rend() );
     }
 
     if(!_file.eof())

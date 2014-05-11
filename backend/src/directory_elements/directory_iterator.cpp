@@ -360,8 +360,9 @@ bool RecursiveDirectoryIterator::forrardStackIterator()
     const fs::path path = top->path();
     if(!_skip_directory_adding and is_directory( path , errorCode) and !is_symlink( path, errorCode))
     {
-        fs::directory_iterator it(path);
-        if(it != EndIterator)
+        boost::system::error_code ec;
+        fs::directory_iterator it(path, ec);
+        if(!ec and it != EndIterator)
         {
             iteratorStack.push(it);
             ++_level;
@@ -389,6 +390,12 @@ bool RecursiveDirectoryIterator::pop()
         else
         {
             iteratorStack.top().increment(errorCode);
+
+            if(errorCode)
+            {
+                std::cout << "BS_ Error" << errorCode.message() << std::endl;
+            }
+
             if(iteratorStack.top() != EndIterator)
             {
                 //std::cout << (*iteratorStack.top()).path().generic_string() << std::endl;

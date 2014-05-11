@@ -131,7 +131,7 @@
        <item>
         <widget class="QLabel" name="about_briefLabel">
          <property name="text">
-          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A Fast Duplicate File Detector with Semi-Automatic Path based suggestion system&lt;/p&gt;&lt;p&gt;&lt;br/&gt;(C) August - December, 2013&lt;br/&gt;Onogu Ibrahim Timothy&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;http://github.com/whiztim/duplichase&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0057ae;&quot;&gt;&lt;br/&gt;http://sourceforge.net/projects/duplichase&lt;br/&gt;http://github.com/whiztim/duplichase&lt;/span&gt;&lt;/a&gt;&lt;a href=&quot;http://blog.whiztim.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0057ae;&quot;&gt;&lt;br/&gt;http://blog.whiztim.com&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
+          <string>&lt;html&gt;&lt;head/&gt;&lt;body&gt;&lt;p&gt;A Fast Duplicate File Detector with Semi-Automatic Path based suggestion system&lt;/p&gt;&lt;p&gt;&lt;br/&gt;(C) August 2013 - May 2014&lt;br/&gt;Onogu Ibrahim Timothy&lt;/p&gt;&lt;p&gt;&lt;a href=&quot;http://github.com/whiztim/duplichase&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0057ae;&quot;&gt;&lt;br/&gt;http://sourceforge.net/projects/duplichase&lt;br/&gt;http://github.com/whiztim/duplichase&lt;/span&gt;&lt;/a&gt;&lt;a href=&quot;http://blog.whiztim.com&quot;&gt;&lt;span style=&quot; text-decoration: underline; color:#0057ae;&quot;&gt;&lt;br/&gt;http://blog.whiztim.com&lt;/span&gt;&lt;/a&gt;&lt;/p&gt;&lt;/body&gt;&lt;/html&gt;</string>
          </property>
         </widget>
        </item>

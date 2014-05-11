@@ -16,10 +16,10 @@ TEMPLATE = app
 #Actually, these are my Non-conventional platform specific dependencies...
 #Change it to fit yours... just make sure you link with "libboost_fulesystem" and "libboost_system"
 win32 {
-    INCLUDEPATH += C:/libs/boost
+    INCLUDEPATH += C:/tim/libs/headers
     LIBS += \
-        C:/libs/boost/bin.v2/libs/filesystem/build/gcc-mingw-4.8.0/debug/link-static/threading-multi/libboost_filesystem-mgw48-mt-d-1_54.a \
-        C:/libs/boost/bin.v2/libs/system/build/gcc-mingw-4.8.0/debug/link-static/threading-multi/libboost_system-mgw48-mt-d-1_54.a
+        C:/tim/libs/lib/gcc/boost/lib/libboost_filesystem-mgw48-mt-1_55.a \
+        C:/tim/libs/lib/gcc/boost/lib/libboost_system-mgw48-mt-1_55.a
 }
 
 !win32 {
