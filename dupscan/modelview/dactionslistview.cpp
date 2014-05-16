@@ -66,22 +66,30 @@ DActionsListView::DActionsListView(QWidget *parent) :
 
 void DActionsListView::selectKeepsGroup()
 {
-    selectNextGroupKeeps( currentIndex(), false );
+    QModelIndex indx = currentIndex();
+    clearSelection();
+    selectNextGroupKeeps( indx, false );
 }
 
 void DActionsListView::selectDeletesGroup()
 {
-    selectNextGroupDeletes( currentIndex(), false);
+    QModelIndex indx = currentIndex();
+    clearSelection();
+    selectNextGroupDeletes( indx, false);
 }
 
 void DActionsListView::selectNextKeepsGroup()
 {
-    selectNextGroupKeeps( currentIndex(), true);
+    QModelIndex indx = currentIndex();
+    clearSelection();
+    selectNextGroupKeeps( indx, true);
 }
 
 void DActionsListView::selectNextDeletesGroup()
 {
-    selectNextGroupDeletes( currentIndex(), true);
+    QModelIndex indx = currentIndex();
+    clearSelection();
+    selectNextGroupDeletes( indx, true);
 }
 
 void DActionsListView::action_openFile()
@@ -154,6 +162,8 @@ void DActionsListView::action_removeFromScanner()
 
 void DActionsListView::action_deletFileNow()
 {
+    if(selectionModel()->selectedIndexes().size() == 0)
+        return;
     int w1 = QMessageBox::warning( this, tr("Deletion:: 1st WARNING"),
                                    tr("<qt><b>1st WARNING! </b></qt>Are you sure you want to delete the selected File(s)??"),
                                    QMessageBox::Yes | QMessageBox::No
@@ -226,7 +236,7 @@ void DActionsListView::processGroupHeaderSelected(QModelIndex index)
 
 void DActionsListView::makeSelection(QModelIndexList indexes, QModelIndex ScrolledTo)
 {
-    selectionModel()->clear();
+    //selectionModel()->clear();
     bool CurrentIndexHasBeenSet = false;
     for(auto& index : indexes)
     {

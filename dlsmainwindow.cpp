@@ -139,6 +139,7 @@ void DLSMainWindow::stageRadioClickEvent()
     {
         dupScanFrameStackedLayout->setCurrentIndex(2);
         dpActionWidget->actionsButtonPanel()->show();
+        dpActionWidget->setFocus();
         return;
     }
     dpActionWidget->actionsButtonPanel()->hide();

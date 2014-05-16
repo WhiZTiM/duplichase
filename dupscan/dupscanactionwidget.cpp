@@ -12,6 +12,7 @@
 **  See http://github.com/WhiZTiM/duplichase for most recent version including documentation.
 ********************************************************************************************/
 #include <QLabel>
+#include <QShortcut>
 #include <QMessageBox>
 #include <QHBoxLayout>
 #include <QApplication>
@@ -79,6 +80,19 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     connect(model, SIGNAL(modelWasJustSet()), this, SLOT(modelWasJustSet()));
     //model->setDuplicates( sampleDuplicateContainer() );
 
+    setupApplicationWideActionShortcuts();
+
+}
+
+void DupScanActionWidget::setupApplicationWideActionShortcuts()
+{
+    new QShortcut(Qt::Key_S, view, SLOT(selectNextKeepsGroup()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_W, view, SLOT(selectNextDeletesGroup()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_A, view, SLOT(selectKeepsGroup()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_Q, view, SLOT(selectDeletesGroup()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_D, view, SLOT(action_markForDelete()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_E, view, SLOT(action_markForKeep()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_X, view, SLOT(action_deletFileNow()), 0, Qt::WindowShortcut);
 }
 
 void DupScanActionWidget::setDuplicates(DLS::DuplicatesContainer duplicates)

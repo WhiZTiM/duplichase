@@ -70,10 +70,11 @@ public slots:
     void selectDeletesGroup();
     void selectNextKeepsGroup();
     void selectNextDeletesGroup();
+    void selectNextPossibilities();
     void scrollToIndex(QModelIndex index);
     void makeSelection(QModelIndexList indexes, QModelIndex ScrolledTo);
 
-private slots:
+//private slots:
     void processGroupHeaderSelected(QModelIndex index);
     void action_openFile();
     void action_openDirectory();

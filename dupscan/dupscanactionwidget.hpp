@@ -52,6 +52,8 @@ private:
 
     QStackedWidget* stackedWidget;
     QLabel* emptyViewLabel;
+
+    void setupApplicationWideActionShortcuts();
 };
 
 #endif // DUPSCANACTIONWIDGET_HPP
