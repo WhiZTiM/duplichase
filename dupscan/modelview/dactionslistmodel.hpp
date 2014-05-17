@@ -95,7 +95,7 @@ public slots:
 
     void autoSelectNextKeeps();
     void autoSelectNextDeletes();
-    void autoSelectNextPossibilities();
+    void autoSelectDeletePossibilities();
 
 private slots:
     void bestIndexScrollTo(int);
@@ -121,7 +121,7 @@ private:
     void prepareModel();
     void w_autoSelectNextKeeps();
     void w_autoSelectNextDeletes();
-    void w_autoSelectNextPossibilities();
+    void w_autoSelectDeletePossibilities();
     void w_autoSelectNext(bool keepers);
     QString formatForLog(const QString& str);
     DLS::DuplicatesContainer iDataListToDuplicatesContainer(const QList<iData>& list) const;

@@ -57,6 +57,7 @@ public:
 signals:
     void selectNextGroupKeeps(QModelIndex index, bool SelectNextGroup);
     void selectNextGroupDeletes(QModelIndex index, bool SelectNextGroup);
+    void selectDeletePossibilities(QModelIndex index);
     void deleteFileNow(QModelIndexList);
     void markForKeep(QModelIndexList);
     void markForDelete(QModelIndexList);
@@ -116,7 +117,8 @@ signals:
     void unmarkAll();
     void autoSelectNextKeeps();
     void autoSelectNextDeletes();
-    void autoSelectNextPossibilities();
+    void autoSelectDeletePossibilities();
+    void autoCleanDeletes();
     void selectGroupKeeps();
     void selectGroupDeletes();
     void selectNextGroupKeeps();
@@ -151,6 +153,7 @@ private:
     QPushButton* sort_pushButton;
     QPushButton* filter_pushButton;
     QPushButton* commit_pushButton;
+    QPushButton* auto_pushButton;
     QMenu sortContextMenu;
     QMenu autoSelectionContextMenu;
     QMenu markingsContextMenu;

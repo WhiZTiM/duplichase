@@ -403,7 +403,7 @@ void DActionsListModel::autoSelectNextDeletes()
         w_selectionFuture = QtConcurrent::run(this, &DActionsListModel::w_autoSelectNextDeletes);
 }
 
-void DActionsListModel::autoSelectNextPossibilities()
+void DActionsListModel::autoSelectDeletePossibilities()
 {
     if(AnyProcessRunning.load())
     {
@@ -411,7 +411,7 @@ void DActionsListModel::autoSelectNextPossibilities()
         return;
     }
     if(!w_selectionFuture.isRunning())
-        w_selectionFuture = QtConcurrent::run(this, &DActionsListModel::w_autoSelectNextPossibilities);
+        w_selectionFuture = QtConcurrent::run(this, &DActionsListModel::w_autoSelectDeletePossibilities);
 }
 
 void DActionsListModel::w_autoSelectNextKeeps()
@@ -424,10 +424,17 @@ void DActionsListModel::w_autoSelectNextDeletes()
     w_autoSelectNext(false);
 }
 
-void DActionsListModel::w_autoSelectNextPossibilities()
+void DActionsListModel::w_autoSelectDeletePossibilities()
 {
     //---> Some cranky stuff here...    ||| NOT YET AVAILABLE |||
     //====>>> To be deployed hopefully in versions greater than 0.8.0 <><><><><><><><><><><>
+
+    //Very crude implementation. . .
+    for(int i = 0; i < viewIt.size(); i++)
+    {
+        QModelIndex indx = createIndex(i, 0);
+        p_selectNextGroup(indx, false, false);
+    }
 }
 
 void DActionsListModel::w_autoSelectNext(bool keepers)
@@ -496,7 +503,8 @@ void DActionsListModel::p_selectNextGroup(QModelIndex index, bool selectNextGrou
         if(selectNextGroup)
         {
             int t_track = idx_lower;
-            while( ( (++t_track) < viewIt.size() - 1 ) && (viewIt[t_track].item != viewIt[t_track].header) );
+            while(((t_track + 1) < viewIt.size() ) && (viewIt[t_track].item != viewIt[t_track].header) )
+                ++t_track;
             idx_lower = idx_upper = t_track;
         }
 

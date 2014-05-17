@@ -253,7 +253,7 @@ void DActionsListView::makeSelection(QModelIndexList indexes, QModelIndex Scroll
 
 void DActionsListView::scrollToIndex(QModelIndex index)
 {
-    selectionModel()->clear();
+    //selectionModel()->clear();
     selectionModel()->select(index, QItemSelectionModel::Select);
     scrollTo(index);
 }
@@ -295,7 +295,7 @@ void DActionsListView::selectNextPossibilities()
 {
     QModelIndex indx = currentIndex();
     clearSelection();
-    selectNextGroupDeletes( indx, true);
+    selectDeletePossibilities(indx);
 }
 
 
@@ -483,6 +483,7 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     markings_pushButton             = new QPushButton("Markings", this);
     autoSelection_pushButton        = new QPushButton("&Auto Selection", this);
     commit_pushButton               = new QPushButton("&Commit", this);
+    auto_pushButton                 = new QPushButton("A&uto", this);
     filterDialog                    = new FilterDialog(this);
 
     sort_pushButton->setCheckable(true);
@@ -493,7 +494,10 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     line->setFrameShape(QFrame::HLine);
 
     QFrame* line2 = new QFrame(this);
-    line->setFrameShape(QFrame::HLine);
+    line2->setFrameShape(QFrame::HLine);
+
+    QFrame* line3 = new QFrame(this);
+    line3->setFrameShape(QFrame::HLine);
 
     mainLayout->addWidget(commit_pushButton);
     mainLayout->addWidget(line);
@@ -503,7 +507,10 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     mainLayout->addWidget(line2);
     mainLayout->addWidget(autoSelection_pushButton);
     mainLayout->addWidget(markings_pushButton);
+    mainLayout->addWidget(line3);
+    mainLayout->addWidget(auto_pushButton);
     mainLayout->addStretch();
+    auto_pushButton->setEnabled(false);
 
     sortContextMenu.addAction("&Descending Order of File size", this, SLOT(sortByDescendingFileSize()));
     sortContextMenu.addAction("&Ascending Order of File size", this, SLOT(sortByAscendingFileSize()));
@@ -512,16 +519,14 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     autoSelectionContextMenu.addAction("Select Group Deletes", this, SIGNAL(selectGroupDeletes()));
     autoSelectionContextMenu.addAction("Select Next Group Keeps", this, SIGNAL(selectNextGroupKeeps()));
     autoSelectionContextMenu.addAction("Select Next Group Deletes", this, SIGNAL(selectNextGroupDeletes()));
-    autoSelectionContextMenu.addAction("Auto Select Next &Possibilities", this, SIGNAL(autoSelectNextPossibilities()))
-            ->setEnabled(false);
+    autoSelectionContextMenu.addAction("Auto Select Next &Possibilities", this, SIGNAL(autoSelectDeletePossibilities()))
+           ;// ->setEnabled(false);
     autoSelectionContextMenu.addAction("Auto Select Highest &Keeps", this, SIGNAL(autoSelectNextKeeps()));
     autoSelectionContextMenu.addAction("Auto Select Highest &Deletes", this, SIGNAL(autoSelectNextDeletes()));
 
     markingsContextMenu.addAction("Unmark &All", this, SIGNAL(unmarkAll()));
     markingsContextMenu.addAction("Unmark All &Keeps", this, SIGNAL(unmarkAllKeeps()));
     markingsContextMenu.addAction("Unmark all &Deletes", this, SIGNAL(unmarkAllDeletes()));
-
-    //filterContextMenu.addAction("Not Yet Available")->setEnabled(false);
 
     connect(reset_pushButton, SIGNAL(clicked()), this, SIGNAL(resetRequested()));
     connect(commit_pushButton, SIGNAL(clicked()), this, SIGNAL(commitRequested()));
@@ -530,6 +535,7 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     connect(sort_pushButton, SIGNAL(clicked()), this, SLOT(processSortRequest()));
     connect(autoSelection_pushButton, SIGNAL(clicked()), this, SLOT(processAutoSelectionClicked()));
     connect(markings_pushButton, SIGNAL(clicked()), this, SLOT(processMarkingsClicked()));
+    connect(auto_pushButton, SIGNAL(clicked()), this, SIGNAL(autoCleanDeletes()));
 
     connect(&sortContextMenu, SIGNAL(aboutToHide()), this, SLOT(sortContextMenuAboutToHide()));
     connect(&autoSelectionContextMenu, SIGNAL(aboutToHide()), this,

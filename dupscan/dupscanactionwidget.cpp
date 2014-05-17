@@ -52,6 +52,7 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     connect(view, SIGNAL(removeFromScanner(QModelIndexList)), model, SLOT(removeIndexesSession(QModelIndexList)));
     connect(view, SIGNAL(selectNextGroupKeeps(QModelIndex,bool)), model, SLOT(selectNextGroupKeeps(QModelIndex,bool)));
     connect(view, SIGNAL(selectNextGroupDeletes(QModelIndex,bool)), model, SLOT(selectNextGroupDeletes(QModelIndex,bool)));
+    connect(view, SIGNAL(selectDeletePossibilities(QModelIndex)), model, SLOT(autoSelectDeletePossibilities()));
 
     connect(actionsButton, SIGNAL(sortingRequested(Qt::SortOrder)), model, SLOT(sortModel(Qt::SortOrder)));
     connect(actionsButton, SIGNAL(commitRequested()), model, SLOT(commitMarkings()));
@@ -61,7 +62,7 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     connect(actionsButton, SIGNAL(unmarkAll()), model, SLOT(unmarkAll()));
     connect(actionsButton, SIGNAL(autoSelectNextKeeps()), model, SLOT(autoSelectNextKeeps()));
     connect(actionsButton, SIGNAL(autoSelectNextDeletes()), model, SLOT(autoSelectNextDeletes()));
-    connect(actionsButton, SIGNAL(autoSelectNextPossibilities()), model, SLOT(autoSelectNextPossibilities()));
+    connect(actionsButton, SIGNAL(autoSelectDeletePossibilities()), view, SLOT(selectNextPossibilities()));
     connect(actionsButton, SIGNAL(selectGroupKeeps()), view, SLOT(selectKeepsGroup()));
     connect(actionsButton, SIGNAL(selectGroupDeletes()), view, SLOT(selectDeletesGroup()));
     connect(actionsButton, SIGNAL(selectNextGroupKeeps()), view, SLOT(selectNextKeepsGroup()));
