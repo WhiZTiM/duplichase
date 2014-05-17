@@ -291,8 +291,12 @@ void DActionsListView::keyPressEvent(QKeyEvent *event)
     std::cerr << event->text().toStdString() << std::endl;
 }
 
-
-
+void DActionsListView::selectNextPossibilities()
+{
+    QModelIndex indx = currentIndex();
+    clearSelection();
+    selectNextGroupDeletes( indx, true);
+}
 
 
 

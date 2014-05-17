@@ -50,7 +50,7 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
     connect(view, SIGNAL(deleteFileNow(QModelIndexList)), model, SLOT(deleteFilesNow(QModelIndexList)));
     connect(view, SIGNAL(removeFromView(QModelIndexList)), model, SLOT(removeIndexes(QModelIndexList)));
     connect(view, SIGNAL(removeFromScanner(QModelIndexList)), model, SLOT(removeIndexesSession(QModelIndexList)));
-    connect(view, SIGNAL(selectNextGroupKeeps(QModelIndex,bool)), model, SLOT(selectNextGroupDeletes(QModelIndex,bool)));
+    connect(view, SIGNAL(selectNextGroupKeeps(QModelIndex,bool)), model, SLOT(selectNextGroupKeeps(QModelIndex,bool)));
     connect(view, SIGNAL(selectNextGroupDeletes(QModelIndex,bool)), model, SLOT(selectNextGroupDeletes(QModelIndex,bool)));
 
     connect(actionsButton, SIGNAL(sortingRequested(Qt::SortOrder)), model, SLOT(sortModel(Qt::SortOrder)));

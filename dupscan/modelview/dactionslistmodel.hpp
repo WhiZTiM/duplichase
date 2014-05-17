@@ -99,10 +99,10 @@ public slots:
 
 private slots:
     void bestIndexScrollTo(int);
-    void p_deleteFilesNow(QModelIndexList indexes, bool RemoveFromModel = false, bool MoveToTrash = false);
-    void p_selectNextGroup(QModelIndex index, bool selectNextGroup, bool keepers);
 
 private:
+    void p_deleteFilesNow(QModelIndexList indexes, bool RemoveFromModel = false, bool MoveToTrash = false);
+    void p_selectNextGroup(QModelIndex index, bool selectNextGroup, bool keepers);
     bool freshPreparation = true;
     std::vector<DLS::ptrVEC_FileProperty> vec_duplicates;
     DLS::DuplicatesContainer duplicates;

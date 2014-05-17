@@ -23,6 +23,7 @@
 #include <iostream>
 #include <array>
 #include <QMutexLocker>
+#include <QThread>
 
 Q_DECLARE_METATYPE(DLS::FileProperty)
 Q_DECLARE_METATYPE(DItem)
@@ -249,6 +250,31 @@ void DActionsListModel::prepareModel()
 
 QVariant DActionsListModel::data(const QModelIndex &index, int role) const
 {
+    /*
+    std::cout << "\tTHREAD ID: " << QThread::currentThreadId() << std::endl;
+    if(index.row() > 100 or index.row() < 0)
+    {
+        std::cout << "\tTHREAD ID: " << QThread::currentThreadId() << std::endl;
+        std::cout << "Yawa don gas: " << index.row() << std::endl;
+        int m = index.row();
+        m = this->rowCount(QModelIndex());
+        int d = m++;
+        std::cout << "newRow: " << d << std::endl;
+        int lp = m + d;
+        std::cerr << lp << std::endl;
+        return QVariant();
+    }
+    std::cout << "indexRow: " << index.row() << std::endl;
+    std::cout << std::boolalpha << "Index is valid: " << index.isValid() << std::endl;
+    int m = viewIt.size();
+    std::cout << m << std::endl;
+    std::cout << "viewIt.size(): " << viewIt.size() << std::endl;
+   // std::cout << "\nYou can see..." << std::endl;
+
+    */
+    if(index.row() >= viewIt.size())
+        return QVariant();
+
     Q_ASSERT_X( index.row() < viewIt.size(), "dataRequest", " Out of range index requested! " );
     DItem item = (*viewIt[ index.row() ].item);
 
@@ -478,11 +504,23 @@ void DActionsListModel::selectNextGroupKeeps(QModelIndex index, bool selectNextG
 
 void DActionsListModel::selectNextGroupDeletes(QModelIndex index, bool selectNextGroup)
 {
+    std::cout << "\tTHREAD ID: " << QThread::currentThreadId() << std::endl;
+    std::cout << index.row() << " index.row() " << std::endl;
+    std::cout << viewIt.size() << " viewIt.size(): " << std::endl;
+    std::cout << std::boolalpha << "index.isValid(): " << index.isValid() << std::endl;
+
+
     p_selectNextGroup(index, selectNextGroup, false);
 }
 
 void DActionsListModel::p_selectNextGroup(QModelIndex index, bool selectNextGroup, bool keepers)
 {
+    std::cout << "\tTHREAD ID: " << QThread::currentThreadId() << std::endl;
+    std::cout << "here222\n";
+    std::cout << index.row() << " index.row() " << std::endl;
+    std::cout << viewIt.size() << " viewIt.size(): " << std::endl;
+    std::cout << std::boolalpha << "index.isValid(): " << index.isValid() << std::endl;
+
     if(!index.isValid())
         return;
     Q_ASSERT_X(index.row() < viewIt.size(), "SelectNext_Routines", "FATAL ERROR: Index out of Range");
@@ -492,7 +530,7 @@ void DActionsListModel::p_selectNextGroup(QModelIndex index, bool selectNextGrou
         if(selectNextGroup)
         {
             int t_track = idx_lower;
-            while( ( ++t_track < viewIt.size() ) && (viewIt[t_track].item != viewIt[t_track].header) );
+            while( ( (++t_track) < viewIt.size() - 1 ) && (viewIt[t_track].item != viewIt[t_track].header) );
             idx_lower = idx_upper = t_track;
         }
 

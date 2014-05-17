@@ -5,7 +5,8 @@
 #
 #-------------------------------------------------
 
-QT       += core gui declarative
+QT       += core gui widgets
+#QT       -= declarative
 RC_FILE = icon.rc
 
 QMAKE_CXXFLAGS += -std=c++11
