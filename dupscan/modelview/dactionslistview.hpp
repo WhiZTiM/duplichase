@@ -131,6 +131,7 @@ signals:
     void statusBarErrorMessage(QString);
 
 public slots:
+    void triggerCommitRequested();
 
 private slots:
     void sortByDescendingFileSize();

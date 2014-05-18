@@ -551,6 +551,11 @@ ActionsButtonPanel::ActionsButtonPanel(QWidget *parent)
     connect(filterDialog, SIGNAL(filterBySize(ulong,ulong)), this, SIGNAL(filterBySize(ulong,ulong)));
 }
 
+void ActionsButtonPanel::triggerCommitRequested()
+{
+    commitRequested();
+}
+
 void ActionsButtonPanel::sortByDescendingFileSize()
 {
     sortingRequested(Qt::DescendingOrder);

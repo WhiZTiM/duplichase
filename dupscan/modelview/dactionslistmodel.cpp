@@ -27,6 +27,7 @@
 
 Q_DECLARE_METATYPE(DLS::FileProperty)
 Q_DECLARE_METATYPE(DItem)
+Q_DECLARE_METATYPE(QModelIndexList)
 
 QString deleteFileToRecycleBin(const QString& filePath);
 QString deleteFilePermanently(const QString& filePath);
@@ -36,6 +37,7 @@ DActionsListModel::DActionsListModel(QObject *parent) :
 {
     qRegisterMetaType<DLS::FileProperty>("DLS::FileProperty");
     qRegisterMetaType<DItem> ("DItem");
+    qRegisterMetaType<QModelIndexList> ("QModelIndexList");
 
     connect(this, SIGNAL(bestIndex(int)), this, SLOT(bestIndexScrollTo(int)));
 }
@@ -498,6 +500,7 @@ void DActionsListModel::p_selectNextGroup(QModelIndex index, bool selectNextGrou
         return;
     Q_ASSERT_X(index.row() < viewIt.size(), "SelectNext_Routines", "FATAL ERROR: Index out of Range");
     //First detect the range of Values we need to sample... || Upper and Lower bounds
+
         int idx_lower = index.row(), idx_upper = idx_lower;
 
         if(selectNextGroup)

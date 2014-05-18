@@ -87,13 +87,20 @@ DupScanActionWidget::DupScanActionWidget(QWidget *parent) :
 
 void DupScanActionWidget::setupApplicationWideActionShortcuts()
 {
-    new QShortcut(Qt::Key_S, view, SLOT(selectNextKeepsGroup()), 0, Qt::WindowShortcut);
-    new QShortcut(Qt::Key_W, view, SLOT(selectNextDeletesGroup()), 0, Qt::WindowShortcut);
-    new QShortcut(Qt::Key_A, view, SLOT(selectKeepsGroup()), 0, Qt::WindowShortcut);
-    new QShortcut(Qt::Key_Q, view, SLOT(selectDeletesGroup()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_W, view, SLOT(selectNextKeepsGroup()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_S, view, SLOT(selectNextDeletesGroup()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_Q, view, SLOT(selectKeepsGroup()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_A, view, SLOT(selectDeletesGroup()), 0, Qt::WindowShortcut);
     new QShortcut(Qt::Key_D, view, SLOT(action_markForDelete()), 0, Qt::WindowShortcut);
     new QShortcut(Qt::Key_E, view, SLOT(action_markForKeep()), 0, Qt::WindowShortcut);
     new QShortcut(Qt::Key_X, view, SLOT(action_deletFileNow()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_Space, actionsButton, SLOT(triggerCommitRequested()), 0,
+                  Qt::WindowShortcut);
+
+    new QShortcut(Qt::Key_O, view, SLOT(action_openFile()), 0, Qt::WindowShortcut);
+    new QShortcut(Qt::Key_L, view, SLOT(action_openDirectory()), 0, Qt::WindowShortcut);
+    new QShortcut(QKeySequence(Qt::CTRL + Qt::Key_D), view, SLOT(selectNextPossibilities()), 0,
+                  Qt::WindowShortcut);
 }
 
 void DupScanActionWidget::setDuplicates(DLS::DuplicatesContainer duplicates)
